@@ -1,13 +1,30 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
+import type { Metadata } from "next";
 
 import { TasteProfileChart } from "@/components/client-widgets";
 import { CriticAvatar, PageShell, SectionHeading, StatPill, formatDate } from "@/components/gamepulse-ui";
-import { toggleFollowCritic } from "@/lib/actions";
+import { FollowCriticForm } from "@/components/action-forms";
 import { getCriticPageData } from "@/lib/gamepulse";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const data = getCriticPageData(slug);
+  if (!data) return {};
+  return {
+    title: `${data.critic.name} — Critic Profile — GamePulse`,
+    description: `${data.critic.bio} Reviews from ${data.critic.outlet}.`,
+    openGraph: {
+      title: `${data.critic.name} — GamePulse Critic`,
+      description: data.critic.bio,
+      type: "profile",
+    },
+    twitter: { card: "summary", title: data.critic.name, description: data.critic.bio },
+  };
+}
 
 export default async function CriticPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -46,11 +63,7 @@ export default async function CriticPage({ params }: { params: Promise<{ slug: s
           <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-sm">
             <SectionHeading eyebrow="Follow" title="Add to your critics roster" />
             <p className="mt-4 text-sm leading-7 text-slate-600">Following keeps this critic front-and-center in your personalized feed and taste calculations.</p>
-            <form action={toggleFollowCritic} className="mt-5">
-              <input type="hidden" name="path" value={`/critics/${critic.slug}`} />
-              <input type="hidden" name="criticId" value={critic.id} />
-              <button className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold ${followed ? "bg-rose-500 text-white" : "border border-slate-300 text-slate-700"}`}><Heart className="h-4 w-4" /> {followed ? "Following" : "Follow critic"}</button>
-            </form>
+            <FollowCriticForm criticSlug={critic.slug} criticId={critic.id} className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold ${followed ? "bg-rose-500 text-white" : "border border-slate-300 text-slate-700"}`} pendingText={followed ? "Unfollowing…" : "Following…"}><Heart className="h-4 w-4" /> {followed ? "Following" : "Follow critic"}</FollowCriticForm>
           </div>
 
           <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-sm">

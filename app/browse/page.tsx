@@ -1,10 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { SearchAutocomplete } from "@/components/client-widgets";
 import { EmptyState, GameGridCard, PageShell, SectionHeading } from "@/components/gamepulse-ui";
 import { getBrowseData, getSearchOptions } from "@/lib/gamepulse";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "Browse Games — GamePulse",
+  description: "Discover board games sorted by GamePulse score, trending buzz, newest releases, or review volume. Filter by category, player count, and complexity.",
+  openGraph: { title: "Browse Games — GamePulse", description: "Find your next great board game." },
+};
 
 function getSingle(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -38,31 +45,43 @@ export default async function BrowsePage({
 
         <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-sm">
           <SectionHeading eyebrow="Filters" title="Tune discovery to your table" />
-          <form className="mt-6 grid gap-4 sm:grid-cols-2">
-            <input name="query" defaultValue={query} placeholder="Search titles, mechanics, categories" className="rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-rose-300 sm:col-span-2" />
-            <select name="category" defaultValue={category} className="rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-rose-300">
+          <form aria-label="Filter games" method="get" className="mt-6 grid gap-4 sm:grid-cols-2">
+            <input name="query" defaultValue={query} placeholder="Search titles, mechanics, categories" className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300 sm:col-span-2" aria-label="Search titles, mechanics, categories" />
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Category</span>
+              <select name="category" defaultValue={category} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
               <option value="all">All categories</option>
               {categories.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-            <select name="players" defaultValue={players} className="rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-rose-300">
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Player count</span>
+              <select name="players" defaultValue={players} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
               <option value="all">All player counts</option>
               <option value="1-2">1-2 players</option>
               <option value="3-4">3-4 players</option>
               <option value="5+">5+ players</option>
-            </select>
-            <select name="complexity" defaultValue={complexity} className="rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-rose-300">
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Complexity</span>
+              <select name="complexity" defaultValue={complexity} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
               <option value="all">Any complexity</option>
               <option value="light">Light</option>
               <option value="medium">Medium</option>
               <option value="heavy">Heavy</option>
-            </select>
-            <select name="sort" defaultValue={sort} className="rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-rose-300">
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Sort by</span>
+              <select name="sort" defaultValue={sort} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
               <option value="score">GamePulse Score</option>
               <option value="trending">Trending</option>
               <option value="newest">Newest</option>
               <option value="most-reviewed">Most reviewed</option>
-            </select>
-            <button className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white sm:col-span-2">Apply filters</button>
+              </select>
+            </label>
+            <button type="submit" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white sm:col-span-2">Apply filters</button>
           </form>
           {autocomplete.length ? (
             <div className="mt-6 flex flex-wrap gap-2">

@@ -1,10 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { TasteProfileChart } from "@/components/client-widgets";
 import { CriticAvatar, PageShell, SectionHeading } from "@/components/gamepulse-ui";
 import { getCriticDirectory } from "@/lib/gamepulse";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "Critics Directory — GamePulse",
+  description: "Find board game critics ranked by taste correlation with your profile. Explore reviewer profiles, taste shapes, and match scores.",
+  openGraph: { title: "Critics Directory — GamePulse", description: "Find the critics that match your taste." },
+};
 
 export default function CriticsDirectoryPage() {
   const critics = getCriticDirectory();

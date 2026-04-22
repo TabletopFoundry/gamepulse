@@ -1,12 +1,29 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Bookmark, Clock3, Heart, ShoppingBag, Star, Users } from "lucide-react";
+import type { Metadata } from "next";
 
 import { ConsensusBadge, CriticAvatar, EmptyState, GameGridCard, PageShell, ScoreCard, SectionHeading, StatPill, formatDate } from "@/components/gamepulse-ui";
-import { submitCommunityReview, toggleUserList } from "@/lib/actions";
+import { ReviewForm, UserListForm } from "@/components/action-forms";
 import { getGamePageData } from "@/lib/gamepulse";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const data = getGamePageData(slug);
+  if (!data) return {};
+  return {
+    title: `${data.game.title} — GamePulse Score ${data.game.criticsScore}/100`,
+    description: data.game.description,
+    openGraph: {
+      title: `${data.game.title} — GamePulse Score ${data.game.criticsScore}/100`,
+      description: data.game.description,
+      type: "website",
+    },
+    twitter: { card: "summary", title: data.game.title, description: data.game.description },
+  };
+}
 
 export default async function GameDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -43,18 +60,8 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
           <div className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:col-span-2 xl:col-span-1">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">Your shelves</p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <form action={toggleUserList}>
-                <input type="hidden" name="path" value={`/games/${game.slug}`} />
-                <input type="hidden" name="gameId" value={game.id} />
-                <input type="hidden" name="listType" value="watchlist" />
-                <button className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${onWatchlist ? "bg-rose-500 text-white" : "border border-slate-300 text-slate-700"}`}><Bookmark className="h-4 w-4" /> {onWatchlist ? "On watchlist" : "Add to watchlist"}</button>
-              </form>
-              <form action={toggleUserList}>
-                <input type="hidden" name="path" value={`/games/${game.slug}`} />
-                <input type="hidden" name="gameId" value={game.id} />
-                <input type="hidden" name="listType" value="wishlist" />
-                <button className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${onWishlist ? "bg-slate-950 text-white" : "border border-slate-300 text-slate-700"}`}><Heart className="h-4 w-4" /> {onWishlist ? "On wishlist" : "Add to wishlist"}</button>
-              </form>
+              <UserListForm gameSlug={game.slug} gameId={game.id} listType="watchlist" className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${onWatchlist ? "bg-rose-500 text-white" : "border border-slate-300 text-slate-700"}`} pendingText={onWatchlist ? "Removing…" : "Adding…"}><Bookmark className="h-4 w-4" /> {onWatchlist ? "On watchlist" : "Add to watchlist"}</UserListForm>
+              <UserListForm gameSlug={game.slug} gameId={game.id} listType="wishlist" className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${onWishlist ? "bg-slate-950 text-white" : "border border-slate-300 text-slate-700"}`} pendingText={onWishlist ? "Removing…" : "Adding…"}><Heart className="h-4 w-4" /> {onWishlist ? "On wishlist" : "Add to wishlist"}</UserListForm>
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               {game.categories.map((category) => (
@@ -122,6 +129,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
                   </div>
                 </div>
               ))}
+              <p className="mt-3 text-xs leading-5 text-slate-400">Prices may include affiliate links. GamePulse may earn a commission at no extra cost to you.</p>
             </div>
           </div>
         </div>
@@ -130,22 +138,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
       <section className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
           <SectionHeading eyebrow="Community reviews" title="Audience pulse" description="Rate from 1–10 and leave a short 280-character review." />
-          <form action={submitCommunityReview} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <input type="hidden" name="path" value={`/games/${game.slug}`} />
-            <input type="hidden" name="slug" value={game.slug} />
-            <input type="hidden" name="gameId" value={game.id} />
-            <div className="grid gap-4 sm:grid-cols-[160px_1fr]">
-              <label className="space-y-2 text-sm font-medium text-slate-700">
-                <span>Your rating</span>
-                <input name="rating" type="number" min="1" max="10" step="0.1" required className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-rose-300" placeholder="8.4" />
-              </label>
-              <label className="space-y-2 text-sm font-medium text-slate-700">
-                <span>Your short review</span>
-                <textarea name="review" required minLength={10} maxLength={280} rows={4} className="w-full rounded-[1.5rem] border border-slate-300 px-4 py-3 outline-none focus:border-rose-300" placeholder="A sharp, specific take in 280 characters or fewer." />
-              </label>
-            </div>
-            <button className="mt-5 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white">Save rating</button>
-          </form>
+          <ReviewForm gameSlug={game.slug} gameId={game.id} />
 
           {communityReviews.length ? (
             <div className="grid gap-4">

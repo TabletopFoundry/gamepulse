@@ -1,10 +1,17 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { TasteProfileChart } from "@/components/client-widgets";
 import { CriticAvatar, EmptyState, GameGridCard, PageShell, SectionHeading, formatDate } from "@/components/gamepulse-ui";
 import { getUserDashboard } from "@/lib/gamepulse";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Your Dashboard — GamePulse",
+  description: "Your taste profile, critic matches, watchlist, wishlist, and personalized game picks.",
+  openGraph: { title: "Your Dashboard — GamePulse", description: "Your personalized board game hub." },
+};
 
 export default function MePage() {
   const { user, ratings, ratingsCount, tasteProfile, matchedCritics, watchlist, wishlist, personalizedPicks } = getUserDashboard();

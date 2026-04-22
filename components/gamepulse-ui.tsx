@@ -14,7 +14,7 @@ export function formatDate(value: string) {
 }
 
 export function PageShell({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">{children}</main>;
+  return <main id="main-content" className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-10 px-4 py-8 sm:px-6 lg:px-8">{children}</main>;
 }
 
 export function SectionHeading({
@@ -44,7 +44,7 @@ export function SectionHeading({
 
 export function ScoreCard({ label, score, detail }: { label: string; score: number; detail: string }) {
   return (
-    <div className={`rounded-[2rem] border p-5 shadow-lg shadow-slate-900/5 ${tone(score)}`}>
+    <div className={`rounded-[2rem] border p-5 shadow-lg shadow-slate-900/5 ${tone(score)}`} role="group" aria-label={`${label}: ${score} out of 100`}>
       <p className="text-xs uppercase tracking-[0.32em] opacity-80">{label}</p>
       <div className="mt-4 flex items-end gap-3">
         <div className="text-5xl font-semibold leading-none">{score}</div>
@@ -97,8 +97,8 @@ export function GameGridCard({ game, spotlight }: { game: GameCardData; spotligh
       </div>
       {spotlight ? <p className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{spotlight}</p> : null}
       <div className="mt-6 flex items-center justify-between text-sm text-slate-500">
-        <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" /> {game.playersLabel}</span>
-        <span className="inline-flex items-center gap-2"><Flame className="h-4 w-4 text-rose-500" /> Buzz {game.buzz}</span>
+        <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" aria-hidden="true" /> {game.playersLabel}</span>
+        <span className="inline-flex items-center gap-2"><Flame className="h-4 w-4 text-rose-500" aria-hidden="true" /><span className="sr-only">Buzz score</span> Buzz {game.buzz}</span>
       </div>
       <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-950">
         View game pulse <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
@@ -126,8 +126,8 @@ export function EmptyState({ title, copy }: { title: string; copy: string }) {
 
 export function FooterCard({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center gap-3 text-slate-500">{icon}<span className="text-xs uppercase tracking-[0.28em]">{title}</span></div>
+    <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm" role="group" aria-label={`${title}: ${value}`}>
+      <div className="flex items-center gap-3 text-slate-500"><span aria-hidden="true">{icon}</span><span className="text-xs uppercase tracking-[0.28em]">{title}</span></div>
       <div className="mt-4 text-2xl font-semibold text-slate-950">{value}</div>
     </div>
   );

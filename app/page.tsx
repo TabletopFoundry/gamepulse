@@ -2,10 +2,10 @@ import Link from "next/link";
 import { ArrowRight, Award, Flame, Mail, TrendingUp } from "lucide-react";
 
 import { GameGridCard, PageShell, SectionHeading, formatDate } from "@/components/gamepulse-ui";
-import { subscribeNewsletter } from "@/lib/actions";
-import { getCriticDirectory, getHomePageData } from "@/lib/gamepulse";
+import { NewsletterForm } from "@/components/action-forms";
+import { getHomePageData, getCriticDirectory } from "@/lib/gamepulse";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default function HomePage() {
   const { trendingGames, risingGames, latestCriticReviews, awards, feedPreview } = getHomePageData();
@@ -42,7 +42,7 @@ export default function HomePage() {
 
         <div className="space-y-6">
           <div className="rounded-[2.5rem] border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <div className="flex items-center gap-3 text-rose-500"><Flame className="h-5 w-5" /><span className="text-xs font-semibold uppercase tracking-[0.3em]">Rising now</span></div>
+            <div className="flex items-center gap-3 text-rose-500"><Flame className="h-5 w-5" aria-hidden="true" /><span className="text-xs font-semibold uppercase tracking-[0.3em]">Rising now</span></div>
             <div className="mt-6 space-y-4">
               {risingGames.map((game) => (
                 <Link key={game.slug} href={`/games/${game.slug}`} className="flex items-center justify-between rounded-[1.5rem] border border-slate-100 bg-slate-50 px-4 py-4 transition hover:border-rose-100 hover:bg-rose-50/70">
@@ -57,13 +57,9 @@ export default function HomePage() {
           </div>
 
           <div className="rounded-[2.5rem] border border-slate-200 bg-gradient-to-br from-white to-rose-50 p-6 shadow-sm">
-            <div className="flex items-center gap-3 text-slate-900"><Mail className="h-5 w-5 text-rose-500" /><span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Newsletter signup</span></div>
+            <div className="flex items-center gap-3 text-slate-900"><Mail className="h-5 w-5 text-rose-500" aria-hidden="true" /><span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Newsletter signup</span></div>
             <p className="mt-4 text-sm leading-7 text-slate-600">Get the weekly editorial digest: top reviews, awards movement, and deal alerts tailored to your taste profile.</p>
-            <form action={subscribeNewsletter} className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <input type="hidden" name="path" value="/" />
-              <input name="email" type="email" required placeholder="you@example.com" className="flex-1 rounded-full border border-slate-300 bg-white px-4 py-3 outline-none ring-0 placeholder:text-slate-400 focus:border-rose-300" />
-              <button className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white">Join the pulse</button>
-            </form>
+            <NewsletterForm />
           </div>
         </div>
       </section>
@@ -111,7 +107,7 @@ export default function HomePage() {
             <div className="mt-6 space-y-3">
               {awards.map((award) => (
                 <Link key={`${award.award_name}-${award.slug}`} href={`/games/${award.slug}`} className="flex items-start gap-3 rounded-[1.5rem] border border-slate-100 bg-slate-50 px-4 py-4">
-                  <Award className="mt-1 h-4 w-4 text-amber-500" />
+                  <Award className="mt-1 h-4 w-4 text-amber-500" aria-hidden="true" />
                   <div>
                     <p className="font-semibold text-slate-950">{award.title}</p>
                     <p className="text-sm text-slate-600">{award.award_name} · {award.result} · {award.award_year}</p>
@@ -127,7 +123,7 @@ export default function HomePage() {
               {feedPreview.map((item) => (
                 <div key={item.id} className="rounded-[1.5rem] border border-slate-100 bg-slate-50 px-4 py-4">
                   <div className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-slate-400">
-                    <TrendingUp className="h-4 w-4 text-rose-500" /> {item.badge}
+                    <TrendingUp className="h-4 w-4 text-rose-500" aria-hidden="true" /> {item.badge}
                   </div>
                   <p className="mt-3 font-semibold text-slate-950">{item.title}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">{item.summary}</p>
