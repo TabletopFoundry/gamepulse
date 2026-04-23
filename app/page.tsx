@@ -1,11 +1,27 @@
 import Link from "next/link";
 import { ArrowRight, Award, Flame, Mail, TrendingUp } from "lucide-react";
+import type { Metadata } from "next";
 
 import { GameGridCard, PageShell, SectionHeading, formatDate } from "@/components/gamepulse-ui";
 import { NewsletterForm } from "@/components/action-forms";
 import { getHomePageData, getCriticDirectory } from "@/lib/gamepulse";
 
 export const revalidate = 60;
+
+export const metadata: Metadata = {
+  title: "GamePulse — The Pulse of the Board Game World",
+  description: "Aggregated critic scores, community reviews, and personalized taste-matched discovery for board games. A Rotten Tomatoes-style content hub.",
+  openGraph: {
+    title: "GamePulse — The Pulse of the Board Game World",
+    description: "Aggregated critic scores, community reviews, and personalized taste-matched discovery for board games.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GamePulse — Board Game Content Hub",
+    description: "Critic consensus, community pulse, and personalized discovery.",
+  },
+};
 
 export default function HomePage() {
   const { trendingGames, risingGames, latestCriticReviews, awards, feedPreview } = getHomePageData();

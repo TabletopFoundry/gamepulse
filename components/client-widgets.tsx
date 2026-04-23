@@ -131,11 +131,14 @@ export function TasteProfileChart({
   profile: TasteProfile;
   accent?: string;
 }) {
-  const data = TASTE_DIMENSIONS.map((dimension) => ({
-    dimension: dimension[0].toUpperCase() + dimension.slice(1),
-    value: profile[dimension],
-    fullMark: 100,
-  }));
+  const data = TASTE_DIMENSIONS.map((dimension) => {
+    const label = dimension[0]?.toUpperCase() ?? "";
+    return {
+      dimension: label + dimension.slice(1),
+      value: profile[dimension],
+      fullMark: 100,
+    };
+  });
 
   return (
     <div className="h-72 w-full rounded-[2rem] border border-slate-200 bg-white/85 p-4 shadow-sm">

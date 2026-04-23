@@ -1,12 +1,24 @@
 {
-  "name": "10-gamepulse",
+  "name": "gamepulse",
   "version": "0.1.0",
   "private": true,
+  "description": "A Rotten Tomatoes-style board game content aggregator with critic consensus scores, taste matching, and personalized discovery.",
+  "keywords": [
+    "board-games",
+    "review-aggregator",
+    "nextjs",
+    "react",
+    "typescript",
+    "sqlite",
+    "taste-matching"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf .next data/gamepulse.db data/gamepulse.db-shm data/gamepulse.db-wal"
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
