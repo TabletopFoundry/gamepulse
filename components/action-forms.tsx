@@ -1,9 +1,22 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, type RefObject } from "react";
 import { useToast } from "@/components/toast";
 import { SubmitButton } from "@/components/submit-button";
 import { submitCommunityReview, subscribeNewsletter, toggleUserList, toggleFollowCritic } from "@/lib/actions";
+import type { ActionResult } from "@/lib/actions";
+
+function useActionToast(state: ActionResult | null, formRef?: RefObject<HTMLFormElement | null>) {
+  const { addToast } = useToast();
+  useEffect(() => {
+    if (state?.success) {
+      addToast(state.message, "success");
+      formRef?.current?.reset();
+    } else if (state && !state.success) {
+      addToast(state.message, "error");
+    }
+  }, [state, addToast, formRef]);
+}
 
 export function ReviewForm({
   gameSlug,
@@ -12,18 +25,9 @@ export function ReviewForm({
   gameSlug: string;
   gameId: number;
 }) {
-  const { addToast } = useToast();
   const [state, formAction] = useActionState(submitCommunityReview, null);
   const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (state?.success) {
-      addToast(state.message, "success");
-      formRef.current?.reset();
-    } else if (state && !state.success) {
-      addToast(state.message, "error");
-    }
-  }, [state, addToast]);
+  useActionToast(state, formRef);
 
   return (
     <form ref={formRef} action={formAction} className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
@@ -49,18 +53,9 @@ export function ReviewForm({
 }
 
 export function NewsletterForm() {
-  const { addToast } = useToast();
   const [state, formAction] = useActionState(subscribeNewsletter, null);
   const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (state?.success) {
-      addToast(state.message, "success");
-      formRef.current?.reset();
-    } else if (state && !state.success) {
-      addToast(state.message, "error");
-    }
-  }, [state, addToast]);
+  useActionToast(state, formRef);
 
   return (
     <form ref={formRef} action={formAction} className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -89,16 +84,8 @@ export function UserListForm({
   className: string;
   pendingText: string;
 }) {
-  const { addToast } = useToast();
   const [state, formAction] = useActionState(toggleUserList, null);
-
-  useEffect(() => {
-    if (state?.success) {
-      addToast(state.message, "success");
-    } else if (state && !state.success) {
-      addToast(state.message, "error");
-    }
-  }, [state, addToast]);
+  useActionToast(state);
 
   return (
     <form action={formAction}>
@@ -123,16 +110,8 @@ export function FollowCriticForm({
   className: string;
   pendingText: string;
 }) {
-  const { addToast } = useToast();
   const [state, formAction] = useActionState(toggleFollowCritic, null);
-
-  useEffect(() => {
-    if (state?.success) {
-      addToast(state.message, "success");
-    } else if (state && !state.success) {
-      addToast(state.message, "error");
-    }
-  }, [state, addToast]);
+  useActionToast(state);
 
   return (
     <form action={formAction} className="mt-5">

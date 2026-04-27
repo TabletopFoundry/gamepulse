@@ -4,18 +4,15 @@ import type { Metadata } from "next";
 import { SearchAutocomplete } from "@/components/client-widgets";
 import { EmptyState, GameGridCard, PageShell, SectionHeading } from "@/components/gamepulse-ui";
 import { getBrowseData, getSearchOptions } from "@/lib/gamepulse";
+import { getSingle } from "@/lib/utils";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Browse Games — GamePulse",
   description: "Discover board games sorted by GamePulse score, trending buzz, newest releases, or review volume. Filter by category, player count, and complexity.",
   openGraph: { title: "Browse Games — GamePulse", description: "Find your next great board game." },
 };
-
-function getSingle(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
 
 export default async function BrowsePage({
   searchParams,

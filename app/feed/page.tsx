@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 
 import { EmptyState, PageShell, SectionHeading, formatDate } from "@/components/gamepulse-ui";
 import { getFeedData } from "@/lib/gamepulse";
+import { getSingle } from "@/lib/utils";
 
 export const revalidate = 60;
 
@@ -12,10 +13,6 @@ export const metadata: Metadata = {
   description: "A personalized stream of board game reviews, deals, news, and video coverage powered by your taste profile.",
   openGraph: { title: "Content Feed — GamePulse", description: "Reviews, deals, and board game news." },
 };
-
-function getSingle(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
 
 const filters = [
   { label: "All", value: "all" },

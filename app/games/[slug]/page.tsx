@@ -1,17 +1,21 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Bookmark, Clock3, Heart, ShoppingBag, Star, Users } from "lucide-react";
 import type { Metadata } from "next";
 
 import { ConsensusBadge, CriticAvatar, EmptyState, GameGridCard, PageShell, ScoreCard, SectionHeading, StatPill, formatDate } from "@/components/gamepulse-ui";
+import { safeJsonLd } from "@/lib/utils";
 import { ReviewForm, UserListForm } from "@/components/action-forms";
 import { getGamePageData } from "@/lib/gamepulse";
 
 export const dynamic = "force-dynamic";
 
+const getCachedGamePageData = cache(getGamePageData);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const data = getGamePageData(slug);
+  const data = getCachedGamePageData(slug);
   if (!data) return {};
   return {
     title: `${data.game.title} — GamePulse Score ${data.game.criticsScore}/100`,
@@ -27,13 +31,28 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function GameDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const data = getGamePageData(slug);
+  const data = getCachedGamePageData(slug);
   if (!data) notFound();
 
   const { game, awards, criticReviews, communityReviews, priceComparison, similarGames, onWatchlist, onWishlist, personalizedScore, matchedCritics } = data;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: game.title,
+    description: game.description,
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: game.criticsScore,
+      bestRating: 100,
+      worstRating: 0,
+      ratingCount: game.criticReviewCount,
+    },
+  };
+
   return (
     <PageShell>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <div className="rounded-[2.5rem] bg-slate-950 p-8 text-white shadow-2xl shadow-slate-900/15 sm:p-10">
           <p className="text-xs font-semibold uppercase tracking-[0.34em] text-rose-300">Game page · aggregated score</p>

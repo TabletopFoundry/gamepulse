@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, Heart } from "lucide-react";
@@ -10,9 +11,11 @@ import { getCriticPageData } from "@/lib/gamepulse";
 
 export const dynamic = "force-dynamic";
 
+const getCachedCriticPageData = cache(getCriticPageData);
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const data = getCriticPageData(slug);
+  const data = getCachedCriticPageData(slug);
   if (!data) return {};
   return {
     title: `${data.critic.name} — Critic Profile — GamePulse`,
@@ -28,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CriticPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const data = getCriticPageData(slug);
+  const data = getCachedCriticPageData(slug);
   if (!data) notFound();
 
   const { critic, matchedCritic, followed, reviews, favoriteGenres } = data;

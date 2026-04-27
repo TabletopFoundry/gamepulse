@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { GameGridCard, PageShell, SectionHeading, formatDate } from "@/components/gamepulse-ui";
 import { NewsletterForm } from "@/components/action-forms";
-import { getHomePageData, getCriticDirectory } from "@/lib/gamepulse";
+import { getHomePageData, getCriticCount } from "@/lib/gamepulse";
 
 export const revalidate = 60;
 
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   const { trendingGames, risingGames, latestCriticReviews, awards, feedPreview } = getHomePageData();
-  const critics = getCriticDirectory();
+  const criticCount = getCriticCount();
 
   return (
     <PageShell>
@@ -46,7 +46,7 @@ export default function HomePage() {
               <p className="mt-2 text-sm text-slate-300">Games with live GamePulse scores</p>
             </div>
             <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
-              <div className="text-3xl font-semibold">{critics.length}</div>
+              <div className="text-3xl font-semibold">{criticCount}</div>
               <p className="mt-2 text-sm text-slate-300">Mock critics with distinct taste profiles</p>
             </div>
             <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
