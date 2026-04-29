@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const data = getCachedCriticPageData(slug);
   if (!data) return {};
   return {
-    title: `${data.critic.name} — Critic Profile — GamePulse`,
+    title: `${data.critic.name} — Critic Profile`,
     description: `${data.critic.bio} Reviews from ${data.critic.outlet}.`,
     openGraph: {
       title: `${data.critic.name} — GamePulse Critic`,

@@ -8,7 +8,7 @@ import { getCriticDirectory } from "@/lib/gamepulse";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Critics Directory — GamePulse",
+  title: "Critics Directory",
   description: "Find board game critics ranked by taste correlation with your profile. Explore reviewer profiles, taste shapes, and match scores.",
   openGraph: { title: "Critics Directory — GamePulse", description: "Find the critics that match your taste." },
 };

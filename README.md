@@ -7,6 +7,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06b6d4?logo=tailwindcss)
 ![SQLite](https://img.shields.io/badge/SQLite-better--sqlite3-003b57?logo=sqlite)
+![CI](https://img.shields.io/github/actions/workflow/status/josedab/gamepulse/ci.yml?label=CI&logo=github)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
@@ -50,6 +51,7 @@ The database seeds automatically on first run with 40+ games, 8 mock critics, co
 | `npm run start` | Serve the production build |
 | `npm run lint` | Run ESLint checks |
 | `npm run type-check` | Run TypeScript compiler checks (no emit) |
+| `npm run check` | Run type-check → lint → build (CI gate) |
 | `npm run clean` | Remove build artifacts and database |
 
 ## 🏗️ Architecture
@@ -87,11 +89,14 @@ The database seeds automatically on first run with 40+ games, 8 mock critics, co
 10-gamepulse/
 ├── app/                    # Next.js App Router pages
 │   ├── page.tsx            # Landing page
+│   ├── api/health/         # Health check endpoint
 │   ├── browse/             # Browse & discover with filters
 │   ├── critics/            # Critic directory + [slug] profiles
 │   ├── feed/               # Personalized content feed
 │   ├── games/[slug]/       # Individual game pages
-│   └── me/                 # User dashboard
+│   ├── me/                 # User dashboard
+│   ├── robots.ts           # SEO robots.txt generation
+│   └── sitemap.ts          # SEO sitemap generation
 ├── components/             # React components
 │   ├── gamepulse-ui.tsx    # Shared UI: cards, badges, sections
 │   ├── client-widgets.tsx  # Client components: search, charts
@@ -102,6 +107,7 @@ The database seeds automatically on first run with 40+ games, 8 mock critics, co
 │   ├── db/                 # Database connection, schema, seeds
 │   ├── queries/            # Per-domain query modules
 │   ├── actions.ts          # Server Actions (review, follow, etc.)
+│   ├── config.ts           # Centralized configuration constants
 │   ├── scoring.ts          # Score algorithms & consensus logic
 │   ├── taste.ts            # Taste dimension types
 │   └── gamepulse.ts        # Barrel re-exports
@@ -111,6 +117,10 @@ The database seeds automatically on first run with 40+ games, 8 mock critics, co
 │   ├── CODE_REVIEW.md      # Code quality audit
 │   ├── UX_REVIEW.md        # UX & accessibility audit
 │   └── IMPROVEMENTS.md     # Improvement roadmap
+├── .github/                # GitHub templates and CI
+│   ├── workflows/ci.yml    # CI pipeline
+│   ├── ISSUE_TEMPLATE/     # Bug report & feature request forms
+│   └── pull_request_template.md
 └── public/                 # Static assets
 ```
 
@@ -134,6 +144,35 @@ GamePulse uses a multi-signal scoring system:
 - Seed data regenerates when the internal `SEED_VERSION` changes
 - All user interactions (ratings, reviews, watchlist, follows, newsletter) persist locally
 - The current user is a hardcoded mock user ("alex") — see [CONTRIBUTING.md](./CONTRIBUTING.md) for auth notes
+
+## 🐳 Docker
+
+```bash
+# Build the container
+docker build -t gamepulse .
+
+# Run it
+docker run -p 3000:3000 gamepulse
+```
+
+The SQLite database is created inside the container at `/app/data/gamepulse.db`. Mount a volume to persist data across restarts:
+
+```bash
+docker run -p 3000:3000 -v gamepulse-data:/app/data gamepulse
+```
+
+## 🔧 Configuration
+
+Copy `.env.example` to `.env.local` to customize settings:
+
+```bash
+cp .env.example .env.local
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `NEXT_PUBLIC_BASE_URL` | `https://gamepulse.example.com` | Public URL for sitemap, OG tags, canonical links |
+| `NODE_ENV` | `development` | Node.js environment |
 
 ## 🛠️ Tech Stack
 

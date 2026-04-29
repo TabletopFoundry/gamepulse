@@ -1,13 +1,14 @@
 import type { MetadataRoute } from "next";
 import { getDb } from "@/lib/db";
-
-const BASE_URL = "https://gamepulse.example.com";
+import { BASE_URL } from "@/lib/config";
 
 export const revalidate = 3600;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const db = getDb();
   const slugs = db.prepare(`SELECT slug FROM games`).all() as Array<{ slug: string }>;
+
+  const criticSlugs = db.prepare(`SELECT slug FROM critics`).all() as Array<{ slug: string }>;
 
   return [
     { url: BASE_URL, changeFrequency: "daily", priority: 1 },
@@ -18,6 +19,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE_URL}/games/${slug}`,
       changeFrequency: "weekly" as const,
       priority: 0.8,
+    })),
+    ...criticSlugs.map(({ slug }) => ({
+      url: `${BASE_URL}/critics/${slug}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
     })),
   ];
 }

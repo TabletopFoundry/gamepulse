@@ -12,8 +12,30 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GamePulse",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://gamepulse.example.com"),
+  title: {
+    default: "GamePulse",
+    template: "%s — GamePulse",
+  },
   description: "The pulse of the board game world — aggregated critic scores, community reviews, and taste-matched discovery.",
+  applicationName: "GamePulse",
+  keywords: ["board games", "review aggregator", "critic scores", "taste matching", "board game reviews"],
+  authors: [{ name: "GamePulse Contributors" }],
+  openGraph: {
+    type: "website",
+    siteName: "GamePulse",
+    title: "GamePulse — The Pulse of the Board Game World",
+    description: "Aggregated critic scores, community reviews, and personalized taste-matched discovery for board games.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "GamePulse — Board Game Content Hub",
+    description: "Critic consensus, community pulse, and personalized discovery.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 const nav = [

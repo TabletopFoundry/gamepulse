@@ -9,7 +9,7 @@ import { getSingle } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Browse Games — GamePulse",
+  title: "Browse Games",
   description: "Discover board games sorted by GamePulse score, trending buzz, newest releases, or review volume. Filter by category, player count, and complexity.",
   openGraph: { title: "Browse Games — GamePulse", description: "Find your next great board game." },
 };

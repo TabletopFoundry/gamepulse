@@ -6,4 +6,5 @@ data/*.db
 *.db-wal
 .env
 .env.local
+.env.production.local
 tsconfig.tsbuildinfo

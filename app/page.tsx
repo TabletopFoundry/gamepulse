@@ -9,7 +9,7 @@ import { getHomePageData, getCriticCount } from "@/lib/gamepulse";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "GamePulse — The Pulse of the Board Game World",
+  title: "The Pulse of the Board Game World",
   description: "Aggregated critic scores, community reviews, and personalized taste-matched discovery for board games. A Rotten Tomatoes-style content hub.",
   openGraph: {
     title: "GamePulse — The Pulse of the Board Game World",

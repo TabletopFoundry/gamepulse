@@ -8,7 +8,7 @@ import { getUserDashboard } from "@/lib/gamepulse";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Your Dashboard — GamePulse",
+  title: "Your Dashboard",
   description: "Your taste profile, critic matches, watchlist, wishlist, and personalized game picks.",
   openGraph: { title: "Your Dashboard — GamePulse", description: "Your personalized board game hub." },
 };

@@ -9,7 +9,7 @@ import { getSingle } from "@/lib/utils";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Content Feed — GamePulse",
+  title: "Content Feed",
   description: "A personalized stream of board game reviews, deals, news, and video coverage powered by your taste profile.",
   openGraph: { title: "Content Feed — GamePulse", description: "Reviews, deals, and board game news." },
 };

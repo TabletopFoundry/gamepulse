@@ -54,18 +54,17 @@ Pages (app/)  →  Queries (lib/queries/)  →  Database (lib/db/)
 | `npm run build` | Verify production build works |
 | `npm run lint` | Check for ESLint issues |
 | `npm run type-check` | Check TypeScript types without building |
+| `npm run check` | Full CI gate: type-check → lint → build |
 | `npm run clean` | Reset database and build artifacts |
 
 ### Before Submitting a PR
 
 ```bash
-# Run all checks
-npm run type-check
-npm run lint
-npm run build
+# Run all checks (type-check → lint → build)
+npm run check
 ```
 
-All three must pass. The CI pipeline will run these automatically on your PR.
+All three stages must pass. The CI pipeline will run these automatically on your PR.
 
 ## Coding Conventions
 
