@@ -15,7 +15,7 @@ const getCachedCriticPageData = cache(getCriticPageData);
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const data = getCachedCriticPageData(slug);
+  const data = await getCachedCriticPageData(slug);
   if (!data) return {};
   return {
     title: `${data.critic.name} — Critic Profile`,
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CriticPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const data = getCachedCriticPageData(slug);
+  const data = await getCachedCriticPageData(slug);
   if (!data) notFound();
 
   const { critic, matchedCritic, followed, reviews, favoriteGenres } = data;

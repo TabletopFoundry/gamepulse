@@ -5,7 +5,7 @@ import { TasteProfileChart } from "@/components/client-widgets";
 import { CriticAvatar, PageShell, SectionHeading } from "@/components/gamepulse-ui";
 import { getCriticDirectory } from "@/lib/gamepulse";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Critics Directory",
@@ -13,8 +13,8 @@ export const metadata: Metadata = {
   openGraph: { title: "Critics Directory — GamePulse", description: "Find the critics that match your taste." },
 };
 
-export default function CriticsDirectoryPage() {
-  const critics = getCriticDirectory();
+export default async function CriticsDirectoryPage() {
+  const critics = await getCriticDirectory();
 
   return (
     <PageShell>

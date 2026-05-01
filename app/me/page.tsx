@@ -13,8 +13,8 @@ export const metadata: Metadata = {
   openGraph: { title: "Your Dashboard — GamePulse", description: "Your personalized board game hub." },
 };
 
-export default function MePage() {
-  const { user, ratings, ratingsCount, tasteProfile, matchedCritics, watchlist, wishlist, personalizedPicks } = getUserDashboard();
+export default async function MePage() {
+  const { user, ratings, ratingsCount, tasteProfile, matchedCritics, watchlist, wishlist, personalizedPicks } = await getUserDashboard();
 
   return (
     <PageShell>

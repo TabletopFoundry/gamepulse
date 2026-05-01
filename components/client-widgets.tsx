@@ -80,10 +80,14 @@ export function SearchAutocomplete({
               goToResult();
             } else if (event.key === "ArrowDown") {
               event.preventDefault();
-              setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+              if (suggestions.length > 0) {
+                setHighlightedIndex((prev) => (prev + 1) % suggestions.length);
+              }
             } else if (event.key === "ArrowUp") {
               event.preventDefault();
-              setHighlightedIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+              if (suggestions.length > 0) {
+                setHighlightedIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+              }
             } else if (event.key === "Escape") {
               setIsFocused(false);
               setHighlightedIndex(-1);

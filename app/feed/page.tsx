@@ -6,7 +6,7 @@ import { EmptyState, PageShell, SectionHeading, formatDate } from "@/components/
 import { getFeedData } from "@/lib/gamepulse";
 import { getSingle } from "@/lib/utils";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Content Feed",

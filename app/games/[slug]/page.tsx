@@ -15,7 +15,7 @@ const getCachedGamePageData = cache(getGamePageData);
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const data = getCachedGamePageData(slug);
+  const data = await getCachedGamePageData(slug);
   if (!data) return {};
   return {
     title: `${data.game.title} — Score ${data.game.criticsScore}/100`,
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function GameDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const data = getCachedGamePageData(slug);
+  const data = await getCachedGamePageData(slug);
   if (!data) notFound();
 
   const { game, awards, criticReviews, communityReviews, priceComparison, similarGames, onWatchlist, onWishlist, personalizedScore, matchedCritics } = data;
