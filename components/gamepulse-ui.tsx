@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Award, Flame, Star, Users } from "lucide-react";
 
 import type { GameCardData } from "@/lib/gamepulse";
+import type { ConsensusLabel } from "@/lib/scoring";
 
 function tone(score: number) {
   if (score >= 85) return "bg-rose-600 text-white border-rose-500";
@@ -55,7 +56,7 @@ export function ScoreCard({ label, score, detail }: { label: string; score: numb
   );
 }
 
-export function ConsensusBadge({ label }: { label: string }) {
+export function ConsensusBadge({ label }: { label: ConsensusLabel }) {
   const badgeTone = label === "Critically Acclaimed"
     ? "bg-rose-600 text-white"
     : label === "Community Favorite"

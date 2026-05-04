@@ -21,7 +21,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${data.game.title} — Score ${data.game.criticsScore}/100`,
     description: data.game.description,
     openGraph: {
-      title: `${data.game.title} — GamePulse Score ${data.game.criticsScore}/100`,      description: data.game.description,
+      title: `${data.game.title} — GamePulse Score ${data.game.criticsScore}/100`,
+      description: data.game.description,
       type: "website",
     },
     twitter: { card: "summary", title: data.game.title, description: data.game.description },

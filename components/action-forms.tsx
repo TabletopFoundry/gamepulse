@@ -5,6 +5,7 @@ import { useToast } from "@/components/toast";
 import { SubmitButton } from "@/components/submit-button";
 import { submitCommunityReview, subscribeNewsletter, toggleUserList, toggleFollowCritic } from "@/lib/actions";
 import type { ActionResult } from "@/lib/actions";
+import type { ListType } from "@/lib/config";
 
 function useActionToast(state: ActionResult | null, formRef?: RefObject<HTMLFormElement | null>) {
   const { addToast } = useToast();
@@ -79,7 +80,7 @@ export function UserListForm({
 }: {
   gameSlug: string;
   gameId: number;
-  listType: string;
+  listType: ListType;
   children: React.ReactNode;
   className: string;
   pendingText: string;

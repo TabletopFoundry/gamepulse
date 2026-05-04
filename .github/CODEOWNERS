@@ -1,0 +1,10 @@
+# Default owners for the whole repository
+* @josedab
+
+# Core business logic
+/lib/ @josedab
+/components/ @josedab
+
+# CI/CD and infrastructure
+/.github/ @josedab
+/Dockerfile @josedab
