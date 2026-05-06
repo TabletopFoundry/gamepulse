@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 
-import { SearchAutocomplete } from "@/components/client-widgets";
 import { EmptyState, GameGridCard, PageShell, SectionHeading } from "@/components/gamepulse-ui";
-import { getBrowseData, getSearchOptions } from "@/lib/gamepulse";
+import { getBrowseData } from "@/lib/gamepulse";
 import { getSingle } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +25,6 @@ export default async function BrowsePage({
   const complexity = getSingle(params.complexity) ?? "all";
   const sort = getSingle(params.sort) ?? "score";
   const { games, categories, awards, autocomplete } = getBrowseData({ query, category, players, complexity, sort });
-  const searchOptions = getSearchOptions();
 
   return (
     <PageShell>
@@ -35,9 +33,6 @@ export default async function BrowsePage({
           <p className="text-xs font-semibold uppercase tracking-[0.34em] text-rose-300">Browse & discover</p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Find your next great board game in a single scan.</h1>
           <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300">Sort by GamePulse score, rising buzz, newest releases, or review volume. Filter by category, player count, and weight — then jump straight into full score breakdowns.</p>
-          <div className="mt-8">
-            <SearchAutocomplete options={searchOptions} placeholder="Autocomplete a title and jump straight to its score page" />
-          </div>
         </div>
 
         <div className="rounded-[2.5rem] border border-slate-200 bg-white p-6 shadow-sm">

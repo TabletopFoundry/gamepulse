@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useId } from "react";
+import { useMemo, useState, useId, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import {
@@ -156,4 +156,40 @@ export function TasteProfileChart({
       </ResponsiveContainer>
     </div>
   );
+}
+
+/** Lazy-loaded wrapper that only renders the full RadarChart when visible in the viewport. */
+export function LazyTasteProfileChart({
+  profile,
+  accent = "#f43f5e",
+}: {
+  profile: TasteProfile;
+  accent?: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  if (!isVisible) {
+    return (
+      <div ref={containerRef} className="h-72 w-full rounded-[2rem] border border-slate-200 bg-white/85 p-4 shadow-sm" />
+    );
+  }
+
+  return <TasteProfileChart profile={profile} accent={accent} />;
 }

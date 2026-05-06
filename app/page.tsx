@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { GameGridCard, PageShell, SectionHeading, formatDate } from "@/components/gamepulse-ui";
 import { NewsletterForm } from "@/components/action-forms";
-import { getHomePageData, getCriticCount } from "@/lib/gamepulse";
+import { getHomePageData, getCriticCount, getGameCount } from "@/lib/gamepulse";
 
 export const revalidate = 60;
 
@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   const { trendingGames, risingGames, latestCriticReviews, awards, feedPreview } = getHomePageData();
   const criticCount = getCriticCount();
+  const gameCount = getGameCount();
 
   return (
     <PageShell>
@@ -42,7 +43,7 @@ export default function HomePage() {
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
             <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
-              <div className="text-3xl font-semibold">{trendingGames.length + risingGames.length + 32}+</div>
+              <div className="text-3xl font-semibold">{gameCount}+</div>
               <p className="mt-2 text-sm text-slate-300">Games with live GamePulse scores</p>
             </div>
             <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
