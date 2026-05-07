@@ -38,7 +38,7 @@ Pages (app/)  →  Queries (lib/queries/)  →  Database (lib/db/)
 ```
 
 - **`app/`** — Next.js App Router pages. Each route is a server component that calls query functions directly.
-- **`components/`** — Reusable UI components. Files ending in `client-widgets.tsx` and `action-forms.tsx` are client components (`"use client"`).
+- **`components/`** — Reusable UI components. `search-autocomplete.tsx`, `client-widgets.tsx`, and `action-forms.tsx` are client components (`"use client"`).
 - **`lib/queries/`** — Data access layer split by domain (games, critics, feed, user, dashboard).
 - **`lib/db/`** — Database connection singleton, schema definition, and seed data.
 - **`lib/scoring.ts`** — Scoring algorithms: cosine similarity, Pearson correlation, consensus badges, personalized predictions.

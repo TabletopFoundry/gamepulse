@@ -10,6 +10,7 @@ type Toast = {
 };
 
 const TOAST_DISMISS_MS = 4000;
+const RECENT_TOAST_WINDOW_MS = 1200;
 
 const ToastContext = createContext<{
   addToast: (message: string, type: "success" | "error") => void;
@@ -25,6 +26,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextId = useRef(0);
   const timersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const recentRef = useRef(new Map<string, number>());
 
   // Clean up all pending timers on unmount
   useEffect(() => {
@@ -38,6 +40,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addToast = useCallback((message: string, type: "success" | "error") => {
+    const now = Date.now();
+    const dedupeKey = `${type}:${message}`;
+    for (const [key, shownAt] of recentRef.current) {
+      if (now - shownAt > RECENT_TOAST_WINDOW_MS) {
+        recentRef.current.delete(key);
+      }
+    }
+
+    if (now - (recentRef.current.get(dedupeKey) ?? 0) < RECENT_TOAST_WINDOW_MS) {
+      return;
+    }
+    recentRef.current.set(dedupeKey, now);
+
     const id = ++nextId.current;
     setToasts((prev) => [...prev, { id, message, type }]);
     const timer = setTimeout(() => {
@@ -62,7 +77,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       <div
         aria-live="polite"
         aria-label="Notifications"
-        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
+        className="fixed inset-x-4 bottom-4 z-50 flex max-w-[calc(100vw-2rem)] flex-col gap-2 sm:left-auto sm:right-4 sm:w-full sm:max-w-sm"
       >
         {toasts.map((toast) => (
           <div

@@ -95,11 +95,13 @@ The database seeds automatically on first run with 40+ games, 8 mock critics, co
 │   ├── feed/               # Personalized content feed
 │   ├── games/[slug]/       # Individual game pages
 │   ├── me/                 # User dashboard
+│   ├── newsletter/manage/  # Self-serve newsletter removal page
 │   ├── robots.ts           # SEO robots.txt generation
 │   └── sitemap.ts          # SEO sitemap generation
 ├── components/             # React components
 │   ├── gamepulse-ui.tsx    # Shared UI: cards, badges, sections
-│   ├── client-widgets.tsx  # Client components: search, charts
+│   ├── search-autocomplete.tsx # Header search combobox
+│   ├── client-widgets.tsx  # Client chart widgets
 │   ├── action-forms.tsx    # Form components with server actions
 │   ├── submit-button.tsx   # Pending-state submit button
 │   └── toast.tsx           # Toast notification system

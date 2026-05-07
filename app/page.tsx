@@ -77,6 +77,7 @@ export default function HomePage() {
             <div className="flex items-center gap-3 text-slate-900"><Mail className="h-5 w-5 text-rose-500" aria-hidden="true" /><span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Newsletter signup</span></div>
             <p className="mt-4 text-sm leading-7 text-slate-600">Get the weekly editorial digest: top reviews, awards movement, and deal alerts tailored to your taste profile.</p>
             <NewsletterForm />
+            <p className="mt-3 text-xs leading-6 text-slate-500">Need to remove your email later? <Link href="/newsletter/manage" className="font-semibold text-slate-700 underline underline-offset-4">Manage newsletter preferences</Link>.</p>
           </div>
         </div>
       </section>

@@ -4,7 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { BellRing, Compass, Newspaper, Sparkles, User } from "lucide-react";
 
 import "./globals.css";
-import { SearchAutocomplete } from "@/components/client-widgets";
+import { SearchAutocomplete } from "@/components/search-autocomplete";
 import { ToastProvider } from "@/components/toast";
 import { getSearchOptions } from "@/lib/gamepulse";
 
@@ -46,7 +46,7 @@ const nav = [
 ];
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const searchOptions = getSearchOptions();
+  const searchOptions = await getSearchOptions();
 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth`}>

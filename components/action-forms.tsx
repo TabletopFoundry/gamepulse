@@ -3,19 +3,33 @@
 import { useActionState, useEffect, useRef, type RefObject } from "react";
 import { useToast } from "@/components/toast";
 import { SubmitButton } from "@/components/submit-button";
-import { submitCommunityReview, subscribeNewsletter, toggleUserList, toggleFollowCritic } from "@/lib/actions";
+import {
+  deleteNewsletterSignup,
+  submitCommunityReview,
+  subscribeNewsletter,
+  toggleFollowCritic,
+  toggleUserList,
+} from "@/lib/actions";
 import type { ActionResult } from "@/lib/actions";
 import type { ListType } from "@/lib/config";
 
 function useActionToast(state: ActionResult | null, formRef?: RefObject<HTMLFormElement | null>) {
   const { addToast } = useToast();
+  const lastStateRef = useRef<ActionResult | null>(null);
+
   useEffect(() => {
-    if (state?.success) {
+    if (!state || lastStateRef.current === state) {
+      return;
+    }
+    lastStateRef.current = state;
+
+    if (state.success) {
       addToast(state.message, "success");
       formRef?.current?.reset();
-    } else if (state && !state.success) {
-      addToast(state.message, "error");
+      return;
     }
+
+    addToast(state.message, "error");
   }, [state, addToast, formRef]);
 }
 
@@ -66,6 +80,33 @@ export function NewsletterForm() {
         <p className="text-sm text-red-600" role="alert">{state.message}</p>
       ) : null}
       <SubmitButton className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white" pendingText="Subscribing…">Join the pulse</SubmitButton>
+    </form>
+  );
+}
+
+export function UnsubscribeNewsletterForm() {
+  const [state, formAction] = useActionState(deleteNewsletterSignup, null);
+  const formRef = useRef<HTMLFormElement>(null);
+  useActionToast(state, formRef);
+
+  return (
+    <form ref={formRef} action={formAction} className="space-y-4">
+      <input type="hidden" name="path" value="/newsletter/manage" />
+      <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+        <span>Email address</span>
+        <input
+          name="email"
+          type="email"
+          required
+          placeholder="you@example.com"
+          className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300"
+          aria-label="Email address to remove from the newsletter"
+        />
+      </label>
+      {state && !state.success ? (
+        <p className="text-sm text-red-600" role="alert">{state.message}</p>
+      ) : null}
+      <SubmitButton className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white" pendingText="Removing…">Remove email</SubmitButton>
     </form>
   );
 }

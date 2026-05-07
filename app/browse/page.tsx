@@ -13,6 +13,33 @@ export const metadata: Metadata = {
   openGraph: { title: "Browse Games — GamePulse", description: "Find your next great board game." },
 };
 
+function buildBrowseHref({
+  query,
+  category,
+  players,
+  complexity,
+  sort,
+  page,
+}: {
+  query: string;
+  category: string;
+  players: string;
+  complexity: string;
+  sort: string;
+  page: number;
+}) {
+  const params = new URLSearchParams();
+  if (query) params.set("query", query);
+  if (category !== "all") params.set("category", category);
+  if (players !== "all") params.set("players", players);
+  if (complexity !== "all") params.set("complexity", complexity);
+  if (sort !== "score") params.set("sort", sort);
+  if (page > 1) params.set("page", String(page));
+
+  const queryString = params.toString();
+  return queryString ? `/browse?${queryString}` : "/browse";
+}
+
 export default async function BrowsePage({
   searchParams,
 }: {
@@ -24,7 +51,9 @@ export default async function BrowsePage({
   const players = getSingle(params.players) ?? "all";
   const complexity = getSingle(params.complexity) ?? "all";
   const sort = getSingle(params.sort) ?? "score";
-  const { games, categories, awards, autocomplete } = getBrowseData({ query, category, players, complexity, sort });
+  const rawPage = Number.parseInt(getSingle(params.page) ?? "1", 10);
+  const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
+  const { games, categories, awards, autocomplete, pagination } = await getBrowseData({ query, category, players, complexity, sort, page });
 
   return (
     <PageShell>
@@ -42,35 +71,35 @@ export default async function BrowsePage({
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Category</span>
               <select name="category" defaultValue={category} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
-              <option value="all">All categories</option>
-              {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+                <option value="all">All categories</option>
+                {categories.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Player count</span>
               <select name="players" defaultValue={players} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
-              <option value="all">All player counts</option>
-              <option value="1-2">1-2 players</option>
-              <option value="3-4">3-4 players</option>
-              <option value="5+">5+ players</option>
+                <option value="all">All player counts</option>
+                <option value="1-2">1-2 players</option>
+                <option value="3-4">3-4 players</option>
+                <option value="5+">5+ players</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Complexity</span>
               <select name="complexity" defaultValue={complexity} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
-              <option value="all">Any complexity</option>
-              <option value="light">Light</option>
-              <option value="medium">Medium</option>
-              <option value="heavy">Heavy</option>
+                <option value="all">Any complexity</option>
+                <option value="light">Light</option>
+                <option value="medium">Medium</option>
+                <option value="heavy">Heavy</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Sort by</span>
               <select name="sort" defaultValue={sort} className="rounded-2xl border border-slate-300 px-4 py-3 focus:border-rose-300">
-              <option value="score">GamePulse Score</option>
-              <option value="trending">Trending</option>
-              <option value="newest">Newest</option>
-              <option value="most-reviewed">Most reviewed</option>
+                <option value="score">GamePulse Score</option>
+                <option value="trending">Trending</option>
+                <option value="newest">Newest</option>
+                <option value="most-reviewed">Most reviewed</option>
               </select>
             </label>
             <button type="submit" className="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white sm:col-span-2">Apply filters</button>
@@ -87,13 +116,44 @@ export default async function BrowsePage({
 
       <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
-          <SectionHeading eyebrow="Results" title={`${games.length} games in the pulse`} description="Each card links to a full Rotten Tomatoes-style breakdown with critics, community, price tracking, and similar games." />
+          <SectionHeading
+            eyebrow="Results"
+            title={`${pagination.totalResults} ${pagination.totalResults === 1 ? "game" : "games"} in the pulse`}
+            description={`Showing ${games.length} result${games.length === 1 ? "" : "s"} on page ${pagination.page} of ${pagination.totalPages}.`}
+          />
           {games.length ? (
-            <div className="grid gap-6 md:grid-cols-2">
-              {games.map((game) => (
-                <GameGridCard key={game.slug} game={game} spotlight={`${game.consensus} · ${game.communityReviewCount} community reviews`} />
-              ))}
-            </div>
+            <>
+              <div className="grid gap-6 md:grid-cols-2">
+                {games.map((game) => (
+                  <GameGridCard key={game.slug} game={game} spotlight={`${game.consensus} · ${game.communityReviewCount} community reviews`} />
+                ))}
+              </div>
+              {pagination.totalPages > 1 ? (
+                <nav aria-label="Browse pagination" className="flex flex-col gap-3 rounded-[2rem] border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-slate-600">Page {pagination.page} of {pagination.totalPages}</p>
+                  <div className="flex gap-3">
+                    {pagination.hasPreviousPage ? (
+                      <Link href={buildBrowseHref({ query, category, players, complexity, sort, page: pagination.page - 1 })} className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+                        Previous
+                      </Link>
+                    ) : (
+                      <span aria-disabled="true" className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-400">
+                        Previous
+                      </span>
+                    )}
+                    {pagination.hasNextPage ? (
+                      <Link href={buildBrowseHref({ query, category, players, complexity, sort, page: pagination.page + 1 })} className="inline-flex items-center justify-center rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
+                        Next page
+                      </Link>
+                    ) : (
+                      <span aria-disabled="true" className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-400">
+                        Next page
+                      </span>
+                    )}
+                  </div>
+                </nav>
+              ) : null}
+            </>
           ) : (
             <EmptyState title="No games match those filters yet" copy="Try broadening the category or complexity filters, or jump directly to a title from the autocomplete list." />
           )}
