@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { getDb } from "@/lib/db";
+import { MATCHED_CRITICS_CACHE_TAG } from "@/lib/config";
 import { TASTE_DIMENSIONS, type TasteProfile } from "@/lib/taste";
 import { clamp, cosineSimilarity, pearson, topGenres } from "@/lib/scoring";
 import { safeJsonParse } from "@/lib/utils";
@@ -183,7 +184,7 @@ function computeMatchedCritics(userId: number): MatchedCritic[] {
 const getCachedMatchedCritics = unstable_cache(
   async (userId: number) => computeMatchedCritics(userId),
   ["matched-critics"],
-  { revalidate: 60 },
+  { revalidate: 60, tags: [MATCHED_CRITICS_CACHE_TAG] },
 );
 
 /** Intra-request dedup via React.cache + cross-request caching via unstable_cache. */

@@ -1,11 +1,11 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
 import { getCurrentUser } from "@/lib/gamepulse";
-import { MAX_REVIEW_LENGTH, MIN_REVIEW_LENGTH, LIST_TYPES } from "@/lib/config";
+import { MATCHED_CRITICS_CACHE_TAG, MAX_REVIEW_LENGTH, MIN_REVIEW_LENGTH, LIST_TYPES } from "@/lib/config";
 import { rateLimit } from "@/lib/rate-limit";
 
 export type ActionResult = {
@@ -40,6 +40,10 @@ function revalidateCommunityPages(path: string) {
   revalidatePath("/me");
   revalidatePath("/critics");
   revalidatePath("/critics/[slug]", "page");
+}
+
+function refreshMatchedCriticsCache() {
+  updateTag(MATCHED_CRITICS_CACHE_TAG);
 }
 
 function newsletterCookieOptions() {
@@ -93,6 +97,7 @@ export async function submitCommunityReview(_prev: ActionResult | null, formData
     return { success: false, message: "Failed to save review. Please try again." };
   }
 
+  refreshMatchedCriticsCache();
   revalidateCommunityPages(path);
 
   return { success: true, message: "Review saved successfully!" };
@@ -154,13 +159,17 @@ export async function toggleFollowCritic(_prev: ActionResult | null, formData: F
     const existing = db.prepare(`SELECT id FROM follows WHERE user_id = ? AND critic_id = ?`).get(user.id, criticId) as { id: number } | undefined;
     if (existing) {
       db.prepare(`DELETE FROM follows WHERE id = ?`).run(existing.id);
+      refreshMatchedCriticsCache();
       revalidatePath(path);
+      revalidatePath("/critics");
       revalidatePath("/me");
       return { success: true, message: "Unfollowed critic" };
     }
 
     db.prepare(`INSERT INTO follows (user_id, critic_id, created_at) VALUES (?, ?, datetime('now'))`).run(user.id, criticId);
+    refreshMatchedCriticsCache();
     revalidatePath(path);
+    revalidatePath("/critics");
     revalidatePath("/me");
     return { success: true, message: "Now following critic" };
   } catch {

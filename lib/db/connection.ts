@@ -25,8 +25,13 @@ function initializeDb(db: Database.Database) {
     return;
   }
 
-  if (meta?.value !== SEED_VERSION) {
+  if (!meta?.value) {
     db.prepare(`INSERT OR REPLACE INTO app_meta (key, value) VALUES ('seed_version', ?)`).run(SEED_VERSION);
+    return;
+  }
+
+  if (meta.value !== SEED_VERSION) {
+    seedDatabase(db);
   }
 }
 
