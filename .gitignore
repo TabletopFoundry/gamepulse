@@ -8,3 +8,7 @@ data/*.db
 .env.local
 .env.production.local
 tsconfig.tsbuildinfo
+
+# Source files under lib/ must stay tracked even when a global gitignore ignores lib/.
+!lib/
+!lib/**/*.ts
