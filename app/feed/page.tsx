@@ -32,7 +32,7 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
       <section className="rounded-[2.5rem] bg-slate-950 p-8 text-white shadow-2xl shadow-slate-900/15 sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.34em] text-rose-300">Content feed</p>
         <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">A personalized stream of reviews, deals, and board game news.</h1>
-        <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">This feed leans into your saved games, followed critics, and inferred taste profile — then mixes in big award and release signals.</p>
+        <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">GamePulse now prioritizes stories tied to critics you follow, games you saved, and titles closest to your taste profile — then mixes in major release and award signals.</p>
         <div className="mt-8 flex flex-wrap gap-3">
           {filters.map((item) => (
             <Link key={item.value} href={item.value === "all" ? "/feed" : `/feed?filter=${item.value}`} className={`rounded-full px-5 py-3 text-sm font-semibold ${filter === item.value ? "bg-rose-500 text-white" : "border border-white/15 text-white/90"}`}>{item.label}</Link>
@@ -54,6 +54,11 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
                   </div>
                   <h2 className="mt-4 text-2xl font-semibold text-slate-950">{item.title}</h2>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{item.summary}</p>
+                  {item.personalizationReason ? (
+                    <p className="mt-4 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">
+                      {item.personalizationReason}
+                    </p>
+                  ) : null}
                   <div className="mt-5 flex flex-wrap gap-3 text-sm font-semibold text-slate-950">
                     {item.game_slug ? <Link href={`/games/${item.game_slug}`} className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2">Game page</Link> : null}
                     {item.critic_slug ? <Link href={`/critics/${item.critic_slug}`} className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2">Critic profile</Link> : null}

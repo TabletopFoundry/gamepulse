@@ -1,17 +1,36 @@
 import { getDb } from "@/lib/db";
+import { cosineSimilarity } from "@/lib/scoring";
+import { safeJsonParse } from "@/lib/utils";
+import type { TasteProfile } from "@/lib/taste";
 import type { RawGame } from "./types";
 import { parseGame } from "./parsers";
+import { getCurrentUser, getCurrentUserTasteProfile } from "./user";
 
 const VALID_FEED_FILTERS = new Set(["review", "news", "deals", "video"]);
 
 export function getFeedData(filter?: string) {
   const db = getDb();
+  const user = getCurrentUser();
+  const tasteProfile = getCurrentUserTasteProfile();
   const useFilter = filter && filter !== "all" && VALID_FEED_FILTERS.has(filter);
   const whereClause = useFilter ? `WHERE fi.item_type = ?` : "";
   const filterParams = useFilter ? [filter] : [];
+
+  const followedCritics = new Set(
+    (db.prepare(`SELECT critic_id FROM follows WHERE user_id = ?`).all(user.id) as Array<{ critic_id: number }>).map((row) => row.critic_id),
+  );
+  const savedGames = new Map<number, "watchlist" | "wishlist">();
+  (db.prepare(`SELECT game_id, list_type FROM user_lists WHERE user_id = ?`).all(user.id) as Array<{ game_id: number; list_type: "watchlist" | "wishlist" }>).forEach((row) => {
+    const existing = savedGames.get(row.game_id);
+    if (!existing || row.list_type === "wishlist") {
+      savedGames.set(row.game_id, row.list_type);
+    }
+  });
+
   const items = db.prepare(`
     SELECT fi.id, fi.item_type, fi.title, fi.summary, fi.published_at, fi.badge,
-           g.slug as game_slug, g.title as game_title,
+           fi.game_id, fi.critic_id,
+           g.slug as game_slug, g.title as game_title, g.taste_profile as game_taste_profile,
            c.slug as critic_slug, c.name as critic_name
     FROM feed_items fi
     LEFT JOIN games g ON g.id = fi.game_id
@@ -25,11 +44,56 @@ export function getFeedData(filter?: string) {
     summary: string;
     published_at: string;
     badge: string;
+    game_id: number | null;
+    critic_id: number | null;
     game_slug: string | null;
     game_title: string | null;
+    game_taste_profile: string | null;
     critic_slug: string | null;
     critic_name: string | null;
   }>;
+
+  const personalizedItems = items
+    .map((item) => {
+      let relevance = 0;
+      let personalizationReason: string | null = null;
+
+      if (item.critic_id && followedCritics.has(item.critic_id)) {
+        relevance += 40;
+        personalizationReason = `Because you follow ${item.critic_name ?? "this critic"}`;
+      }
+
+      const savedList = item.game_id ? savedGames.get(item.game_id) : undefined;
+      if (savedList) {
+        relevance += 30;
+        if (!personalizationReason) {
+          personalizationReason = `Saved to your ${savedList}`;
+        }
+      }
+
+      if (item.game_taste_profile) {
+        const gameTasteProfile = safeJsonParse<TasteProfile>(item.game_taste_profile, {
+          strategy: 0,
+          thematic: 0,
+          party: 0,
+          family: 0,
+          solo: 0,
+          conflict: 0,
+        });
+        const tasteMatch = cosineSimilarity(tasteProfile, gameTasteProfile);
+        relevance += Math.round(tasteMatch * 20);
+        if (!personalizationReason && tasteMatch >= 0.78) {
+          personalizationReason = "Close to your taste profile";
+        }
+      }
+
+      return {
+        ...item,
+        personalizationReason,
+        relevance,
+      };
+    })
+    .sort((left, right) => right.relevance - left.relevance || right.published_at.localeCompare(left.published_at));
 
   const releases = db.prepare(`SELECT * FROM release_calendar ORDER BY release_date ASC`).all() as Array<{
     id: number;
@@ -49,7 +113,7 @@ export function getFeedData(filter?: string) {
     ],
   };
 
-  return { items, releases, newsletterPreview };
+  return { items: personalizedItems, releases, newsletterPreview };
 }
 
 export function getHomePageData() {
