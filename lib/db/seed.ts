@@ -2,10 +2,66 @@ import type Database from "better-sqlite3";
 import { TASTE_DIMENSIONS, type TasteProfile } from "@/lib/taste";
 import { critics, type CriticSeed } from "./seeds/critics";
 import { communityUsers, type CommunityUserSeed } from "./seeds/users";
-import { gameSeeds, awardSeeds, releaseCalendarSeeds, type GameSeed } from "./seeds/games";
+import { awardSeeds, gameSeeds, releaseCalendarSeeds, type GameSeed } from "./seeds/games";
 
 const NOW = process.env.NODE_ENV === "test" ? new Date("2026-05-16T12:00:00.000Z") : new Date();
-const SEED_VERSION = "gamepulse-v1";
+const SEED_VERSION = "gamepulse-v2-rich-catalog";
+
+type SeedOverride = {
+  criticReviews?: number;
+  communityReviews?: number;
+  criticBias?: number;
+  communityBias?: number;
+  forcedCritics?: string[];
+  forcedUsers?: string[];
+};
+
+const GAME_OVERRIDES: Record<string, SeedOverride> = {
+  crokinole: { criticReviews: 1, communityReviews: 7, criticBias: -7, communityBias: 1.6, forcedCritics: ["jasper-flynn"], forcedUsers: ["piper", "zane", "hugo"] },
+  "sea-salt-paper": { criticReviews: 2, communityReviews: 9, criticBias: 8, communityBias: 3.6, forcedCritics: ["jasper-flynn", "naomi-hart"], forcedUsers: ["sofia", "paige", "nora"] },
+  "beyond-the-sun": { criticReviews: 2, communityReviews: 6, criticBias: -4, communityBias: 0.8, forcedCritics: ["greta-ledger", "viv-chen"] },
+  tapestry: { criticReviews: 4, communityReviews: 6, criticBias: 10, communityBias: -1.4 },
+  hegemony: { criticReviews: 5, communityReviews: 5, criticBias: 9, communityBias: -1.7, forcedCritics: ["greta-ledger", "hector-ruiz", "priya-nandi"] },
+  "ready-set-bet": { criticReviews: 5, communityReviews: 8, criticBias: 7, communityBias: -1.1, forcedCritics: ["theo-sparks", "benji-cruz", "jasper-flynn"] },
+  skull: { criticReviews: 3, communityReviews: 8, criticBias: -2, communityBias: 0.9 },
+  "wonderland-s-war": { criticReviews: 4, communityReviews: 6, criticBias: 4, communityBias: -0.7 },
+  "puerto-rico-1897": { criticReviews: 1, communityReviews: 4, criticBias: 3, communityBias: -0.3, forcedCritics: ["greta-ledger"] },
+  "the-white-castle": { criticReviews: 5, communityReviews: 8, criticBias: 5, communityBias: 0.2, forcedCritics: ["greta-ledger", "viv-chen", "priya-nandi"] },
+  harmonies: { criticReviews: 5, communityReviews: 10, criticBias: 6, communityBias: 3.6, forcedCritics: ["naomi-hart", "owen-park"] },
+  "sky-team": { criticReviews: 6, communityReviews: 10, criticBias: 4, communityBias: 0.6, forcedCritics: ["clara-bishop", "samira-holt", "owen-park"] },
+  "seti-search-for-extraterrestrial-intelligence": { criticReviews: 6, communityReviews: 9, criticBias: 5, communityBias: 0.5, forcedCritics: ["greta-ledger", "viv-chen", "hector-ruiz"] },
+  cascadia: { criticReviews: 4, communityReviews: 10, criticBias: 6, communityBias: 2.9 },
+  "castle-combo": { criticReviews: 4, communityReviews: 9, criticBias: 7, communityBias: 3.1, forcedCritics: ["naomi-hart", "jasper-flynn"] },
+  decrypto: { criticReviews: 3, communityReviews: 8, criticBias: 1, communityBias: 0.6 },
+};
+
+const REVIEW_OPENERS = [
+  "The standout move is",
+  "What keeps the design humming is",
+  "The strongest part of the experience is",
+  "At its best, the game delivers",
+] as const;
+
+const REVIEW_CRITIQUES = [
+  "the closing turns can drag if your group misses the pacing cue.",
+  "the teach asks for patience before the best decisions emerge.",
+  "its roughest edges show when the table wants a cleaner rhythm.",
+  "the final score can hinge on whether players embrace the central tension.",
+] as const;
+
+const COMMUNITY_PRAISE = [
+  "earned another immediate rematch with this group.",
+  "kept the table locked in from teach to final score.",
+  "clicked harder on repeat play than the hype suggested.",
+  "felt approachable without running out of interesting choices.",
+] as const;
+
+const COMMUNITY_MIXED = [
+  "landed well overall, though a few people bounced off the tempo.",
+  "had some brilliant moments, even if the ending felt slightly loose.",
+  "worked best once everyone understood the central rhythm.",
+  "showed real promise, but the table wanted one more round to fully gel.",
+] as const;
 
 function slugify(value: string) {
   return value
@@ -33,57 +89,106 @@ function affinity(game: GameSeed, tasteProfile: TasteProfile) {
   return total / TASTE_DIMENSIONS.length;
 }
 
-function criticScoreForGame(game: GameSeed, critic: CriticSeed, seedKey: string) {
+function tasteAlignment(left: TasteProfile, right: TasteProfile) {
+  const total = TASTE_DIMENSIONS.reduce((sum, key) => {
+    return sum + (left[key] * right[key]) / 100;
+  }, 0);
+  return total / TASTE_DIMENSIONS.length;
+}
+
+function criticScoreForGame(game: GameSeed, critic: CriticSeed, seedKey: string, bias = 0) {
   const taste = affinity(game, critic.tasteProfile);
   const complexityPenalty = Math.abs(game.complexity - critic.preferredComplexity) * 7.5;
   const noise = (hash(seedKey) % 11) - 5;
-  return clamp(Math.round(42 + taste * 0.58 + game.buzz * 0.12 + game.rising * 0.08 - complexityPenalty + noise), 47, 98);
+  return clamp(Math.round(42 + taste * 0.58 + game.buzz * 0.12 + game.rising * 0.08 - complexityPenalty + noise + bias), 45, 98);
 }
 
-function userRatingForGame(game: GameSeed, user: CommunityUserSeed, seedKey: string) {
+function userRatingForGame(game: GameSeed, user: CommunityUserSeed, seedKey: string, bias = 0) {
   const taste = affinity(game, user.tasteProfile);
   const complexityPenalty = Math.abs(game.complexity - user.preferredComplexity) * 0.9;
   const noise = ((hash(seedKey) % 17) - 8) / 10;
-  const raw = 4.1 + taste * 0.055 + game.rising * 0.008 - complexityPenalty + noise;
-  return Number(clamp(Math.round(raw * 10) / 10, 4.8, 9.9).toFixed(1));
+  const raw = 4.1 + taste * 0.055 + game.rising * 0.008 - complexityPenalty + noise + bias;
+  return Number(clamp(Math.round(raw * 10) / 10, 3.8, 9.9).toFixed(1));
 }
 
 function criticVerdict(score: number) {
-  if (score >= 90) return "Pulse pick";
-  if (score >= 82) return "Strong recommend";
-  if (score >= 72) return "Worth your table";
+  if (score >= 92) return "Pulse essential";
+  if (score >= 86) return "Pulse pick";
+  if (score >= 78) return "Strong recommend";
+  if (score >= 70) return "Worth your table";
   return "Mixed pulse";
 }
 
-function communitySnippet(score: number, game: GameSeed) {
+function communityReviewText(score: number, user: CommunityUserSeed, game: GameSeed, seedKey: string) {
+  const praise = COMMUNITY_PRAISE[hash(`${seedKey}-praise`) % COMMUNITY_PRAISE.length] ?? COMMUNITY_PRAISE[0];
+  const mixed = COMMUNITY_MIXED[hash(`${seedKey}-mixed`) % COMMUNITY_MIXED.length] ?? COMMUNITY_MIXED[0];
+  const firstMechanic = game.mechanics[0]?.toLowerCase() ?? "play pattern";
   if (score >= 8.8) {
-    return `${game.title} keeps earning replays because the core loop feels instantly satisfying.`;
+    return `${user.name} loved how ${game.title} turns ${firstMechanic} into a satisfying arc and said it ${praise}`;
   }
-  if (score >= 7.5) {
-    return `${game.title} lands well at the table, even if a few edges show on repeat plays.`;
+  if (score >= 7.4) {
+    return `${user.name} thought ${game.title} was easy to root for because the ${firstMechanic} kept producing smart little choices and it ${mixed}`;
   }
-  return `${game.title} has flashes of brilliance, but this group wanted a tighter finish.`;
+  return `${user.name} respected what ${game.title} was aiming for, but felt the ${firstMechanic} never fully paid off for this particular group.`;
 }
 
-function criticExcerpt(score: number, critic: CriticSeed, game: GameSeed) {
+function criticExcerpt(score: number, critic: CriticSeed, game: GameSeed, seedKey: string) {
+  const opener = REVIEW_OPENERS[hash(`${seedKey}-opener`) % REVIEW_OPENERS.length] ?? REVIEW_OPENERS[0];
+  const critique = REVIEW_CRITIQUES[hash(`${seedKey}-critique`) % REVIEW_CRITIQUES.length] ?? REVIEW_CRITIQUES[0];
   const firstCategory = game.categories[0]?.toLowerCase() ?? "game";
   const firstMechanic = game.mechanics[0]?.toLowerCase() ?? "gameplay";
-  const secondMechanic = game.mechanics[1]?.toLowerCase() ?? firstMechanic;
+
   if (score >= 90) {
-    return `${critic.name} says ${game.title} feels like a benchmark for ${firstCategory} design, with ${firstMechanic} that keeps every turn meaningful.`;
+    return `${critic.name} argues ${game.title} is a benchmark for ${firstCategory} design. ${opener.toLowerCase()} the way ${firstMechanic} supports ${game.hook}.`;
   }
   if (score >= 80) {
-    return `${critic.name} found ${game.title} consistently engaging, especially the way ${secondMechanic} supports ${game.hook}.`;
+    return `${critic.name} found ${game.title} consistently engaging, especially in how ${firstMechanic} reinforces ${game.hook}, though ${critique}`;
   }
   if (score >= 70) {
-    return `${critic.name} liked the central ideas in ${game.title}, but noted the experience depends on whether your table enjoys ${firstCategory} pressure.`;
+    return `${critic.name} liked the central ideas in ${game.title}, but noted the experience depends heavily on whether your table enjoys ${firstCategory} pressure and ${firstMechanic}.`;
   }
-  return `${critic.name} appreciated the ambition in ${game.title}, yet felt the pacing never fully delivered on ${game.hook}.`;
+  return `${critic.name} appreciated the ambition in ${game.title}, yet felt ${game.hook} never overcame the fact that ${critique}`;
 }
 
 function priceForRetailer(game: GameSeed, retailerOffset: number) {
   const base = 24 + game.complexity * 10 + game.buzz * 0.22 + retailerOffset * 3;
   return Number((base - (retailerOffset % 2 === 0 ? 6.5 : 2.75)).toFixed(2));
+}
+
+function sourceLink(critic: CriticSeed, game: GameSeed) {
+  const contentPath = critic.platform === "YouTube" || critic.platform === "Shorts" || critic.platform === "Video Essay"
+    ? "videos"
+    : critic.platform === "Podcast"
+      ? "episodes"
+      : "reviews";
+  return `${critic.baseUrl}/${contentPath}/${slugify(game.title)}-${slugify(critic.tagline)}`;
+}
+
+function reviewCountForGame(game: GameSeed, override: SeedOverride) {
+  if (override.criticReviews) return override.criticReviews;
+  if (game.buzz >= 88 || game.rising >= 85) return 5;
+  if (game.buzz >= 80 || game.rising >= 70) return 4;
+  if (game.buzz >= 72) return 3;
+  return 2;
+}
+
+function communityCountForGame(game: GameSeed, override: SeedOverride) {
+  if (override.communityReviews) return override.communityReviews;
+  const momentum = game.buzz + game.rising;
+  if (momentum >= 175) return 9;
+  if (momentum >= 160) return 7;
+  if (momentum >= 145) return 6;
+  if (game.complexity <= 2.1) return 5;
+  return 4;
+}
+
+function pushUnique<T extends { slug: string }>(collection: T[], items: Array<T | undefined>) {
+  const seen = new Set(collection.map((item) => item.slug));
+  for (const item of items) {
+    if (!item || seen.has(item.slug)) continue;
+    collection.push(item);
+    seen.add(item.slug);
+  }
 }
 
 export function seedDatabase(db: Database.Database) {
@@ -136,6 +241,7 @@ export function seedDatabase(db: Database.Database) {
   const transaction = db.transaction(() => {
     db.exec(`
       DELETE FROM newsletter_signups;
+      DELETE FROM newsletter_manage_tokens;
       DELETE FROM follows;
       DELETE FROM user_lists;
       DELETE FROM feed_items;
@@ -148,31 +254,43 @@ export function seedDatabase(db: Database.Database) {
       DELETE FROM community_users;
       DELETE FROM critics;
       DELETE FROM app_meta;
+      DELETE FROM sqlite_sequence WHERE name IN (
+        'critics',
+        'community_users',
+        'games',
+        'critic_reviews',
+        'community_reviews',
+        'game_prices',
+        'awards',
+        'release_calendar',
+        'feed_items',
+        'user_lists',
+        'follows'
+      );
     `);
 
     const criticIds = new Map<string, number>();
     const userIds = new Map<string, number>();
     const gameIds = new Map<string, number>();
+    const reviewsByUser = new Map<number, Set<number>>();
 
     for (const critic of critics) {
-      insertCritic.run({ ...critic, tasteProfile: JSON.stringify(critic.tasteProfile) });
-      const row = db.prepare(`SELECT id FROM critics WHERE slug = ?`).get(critic.slug) as { id: number };
-      criticIds.set(critic.slug, row.id);
+      const result = insertCritic.run({ ...critic, tasteProfile: JSON.stringify(critic.tasteProfile) });
+      criticIds.set(critic.slug, Number(result.lastInsertRowid));
     }
 
     for (const user of communityUsers) {
-      insertUser.run({
+      const result = insertUser.run({
         ...user,
         tasteProfile: JSON.stringify(user.tasteProfile),
         isCurrent: user.isCurrent ? 1 : 0,
       });
-      const row = db.prepare(`SELECT id FROM community_users WHERE handle = ?`).get(user.handle) as { id: number };
-      userIds.set(user.handle, row.id);
+      userIds.set(user.handle, Number(result.lastInsertRowid));
     }
 
     for (const game of gameSeeds) {
       const slug = slugify(game.title);
-      insertGame.run({
+      const result = insertGame.run({
         slug,
         title: game.title,
         year: game.year,
@@ -187,45 +305,50 @@ export function seedDatabase(db: Database.Database) {
         rising: game.rising,
         tasteProfile: JSON.stringify(game.tasteProfile),
       });
-      const row = db.prepare(`SELECT id FROM games WHERE slug = ?`).get(slug) as { id: number };
-      gameIds.set(slug, row.id);
+      gameIds.set(slug, Number(result.lastInsertRowid));
     }
 
     for (const [gameIndex, game] of gameSeeds.entries()) {
-      const gameId = gameIds.get(slugify(game.title));
+      const slug = slugify(game.title);
+      const gameId = gameIds.get(slug);
       if (!gameId) continue;
 
+      const override = GAME_OVERRIDES[slug] ?? {};
       const reviewPool = critics
         .map((critic, criticIndex) => ({
+          slug: critic.slug,
           critic,
           criticId: criticIds.get(critic.slug)!,
-          score: criticScoreForGame(game, critic, `${critic.slug}-${game.title}`),
+          score: criticScoreForGame(game, critic, `${critic.slug}-${slug}`, override.criticBias ?? 0),
+          rankSignal: affinity(game, critic.tasteProfile) + ((hash(`${slug}-${critic.slug}`) % 9) - 4),
           criticIndex,
         }))
-        .sort((left, right) => right.score - left.score);
+        .sort((left, right) => right.rankSignal - left.rankSignal || right.score - left.score || left.criticIndex - right.criticIndex);
 
-      const selected = Array.from(
-        new Map(
-          [reviewPool[0], reviewPool[1], reviewPool[2], reviewPool[(gameIndex + 3) % reviewPool.length], reviewPool[(gameIndex + 5) % reviewPool.length]]
-            .filter((item): item is NonNullable<typeof item> => Boolean(item))
-            .map((item) => [item.critic.slug, item]),
-        ).values(),
-      ).slice(0, 4 + (gameIndex % 2));
+      const selectedCritics: Array<(typeof reviewPool)[number]> = [];
+      pushUnique(
+        selectedCritics,
+        (override.forcedCritics ?? []).map((criticSlug) => reviewPool.find((entry) => entry.critic.slug === criticSlug)),
+      );
+      pushUnique(
+        selectedCritics,
+        Array.from({ length: Math.min(critics.length, 6) }, (_, offset) => reviewPool[(gameIndex + offset) % reviewPool.length]),
+      );
+      pushUnique(selectedCritics, reviewPool.slice(0, 6));
 
-      for (const [reviewIndex, review] of selected.entries()) {
-        if (!review) continue;
-        const publishedAt = daysAgo((gameIndex * 4 + reviewIndex * 7 + review.criticIndex * 2) % 75 + 1);
+      selectedCritics.slice(0, reviewCountForGame(game, override)).forEach((review, reviewIndex) => {
+        const publishedAt = daysAgo((gameIndex * 5 + reviewIndex * 7 + review.criticIndex * 3) % 140 + 1);
         insertCriticReview.run(
           gameId,
           review.criticId,
           review.score,
           criticVerdict(review.score),
-          criticExcerpt(review.score, review.critic, game),
-          review.critic.outlet,
+          criticExcerpt(review.score, review.critic, game, `${review.critic.slug}-${slug}-${reviewIndex}`),
+          sourceLink(review.critic, game),
           review.critic.platform,
           publishedAt,
         );
-      }
+      });
 
       const retailers = [
         ["MeepleMart", "Free over $75", "Best editorial pick"],
@@ -237,15 +360,44 @@ export function seedDatabase(db: Database.Database) {
         insertPrice.run(gameId, retailer, priceForRetailer(game, retailerIndex), shipping, label);
       });
 
-      communityUsers.slice(1).forEach((user, userIndex) => {
-        const rating = userRatingForGame(game, user, `${user.handle}-${game.title}`);
+      const audiencePool = communityUsers
+        .filter((user) => !user.isCurrent)
+        .map((user, userIndex) => ({
+          slug: user.handle,
+          user,
+          userId: userIds.get(user.handle)!,
+          desirability:
+            affinity(game, user.tasteProfile)
+            - Math.abs(game.complexity - user.preferredComplexity) * 5
+            + (hash(`${user.handle}-${slug}`) % 13)
+            + game.rising * 0.08,
+          userIndex,
+        }))
+        .sort((left, right) => right.desirability - left.desirability || left.userIndex - right.userIndex);
+
+      const selectedUsers: Array<(typeof audiencePool)[number]> = [];
+      pushUnique(
+        selectedUsers,
+        (override.forcedUsers ?? []).map((handle) => audiencePool.find((entry) => entry.user.handle === handle)),
+      );
+      pushUnique(
+        selectedUsers,
+        Array.from({ length: Math.min(audiencePool.length, 10) }, (_, offset) => audiencePool[(gameIndex * 2 + offset) % audiencePool.length]),
+      );
+      pushUnique(selectedUsers, audiencePool.slice(0, 8));
+
+      selectedUsers.slice(0, communityCountForGame(game, override)).forEach((entry, reviewIndex) => {
+        const rating = userRatingForGame(game, entry.user, `${entry.user.handle}-${slug}`, override.communityBias ?? 0);
         insertCommunityReview.run(
           gameId,
-          userIds.get(user.handle),
+          entry.userId,
           rating,
-          communitySnippet(rating, game),
-          daysAgo((gameIndex * 3 + userIndex * 5) % 60 + 2),
+          communityReviewText(rating, entry.user, game, `${entry.user.handle}-${slug}-${reviewIndex}`),
+          daysAgo((gameIndex * 4 + reviewIndex * 5 + entry.userIndex) % 120 + 2),
         );
+        const userReviews = reviewsByUser.get(entry.userId) ?? new Set<number>();
+        userReviews.add(gameId);
+        reviewsByUser.set(entry.userId, userReviews);
       });
     }
 
@@ -262,32 +414,42 @@ export function seedDatabase(db: Database.Database) {
       "lost-ruins-of-arnak",
       "brass-birmingham",
       "cascadia",
+      "sea-salt-paper",
+      "beyond-the-sun",
+      "wonderland-s-war",
     ];
 
-    const alexUser = communityUsers[0];
-    for (const slug of alexRatedGames) {
-      const game = gameSeeds.find((candidate) => slugify(candidate.title) === slug);
-      if (!game || !alexUser) continue;
-      insertCommunityReview.run(
-        gameIds.get(slug),
-        userIds.get("alex"),
-        userRatingForGame(game, alexUser, `alex-${slug}`),
-        communitySnippet(userRatingForGame(game, alexUser, `alex-${slug}`), game),
-        daysAgo((hash(slug) % 28) + 1),
-      );
+    const alexUser = communityUsers.find((user) => user.handle === "alex");
+    const alexId = userIds.get("alex");
+    if (alexUser && alexId) {
+      for (const slug of alexRatedGames) {
+        const game = gameSeeds.find((candidate) => slugify(candidate.title) === slug);
+        const gameId = gameIds.get(slug);
+        if (!game || !gameId) continue;
+        const rating = userRatingForGame(game, alexUser, `alex-${slug}`, slug === "wonderland-s-war" ? -0.2 : 0.4);
+        insertCommunityReview.run(
+          gameId,
+          alexId,
+          rating,
+          communityReviewText(rating, alexUser, game, `alex-${slug}`),
+          daysAgo((hash(slug) % 45) + 1),
+        );
+        const alexReviews = reviewsByUser.get(alexId) ?? new Set<number>();
+        alexReviews.add(gameId);
+        reviewsByUser.set(alexId, alexReviews);
+      }
     }
 
-    const scoreRows = db.prepare(`SELECT id FROM games`).all() as Array<{ id: number }>;
     const updateGameScores = db.prepare(`
       UPDATE games
       SET critics_score = ?, community_score = ?, critic_reviews_count = ?, community_reviews_count = ?
       WHERE id = ?
     `);
 
-    for (const row of scoreRows) {
-      const criticStats = db.prepare(`SELECT ROUND(AVG(score)) as avgScore, COUNT(*) as count FROM critic_reviews WHERE game_id = ?`).get(row.id) as { avgScore: number; count: number };
-      const communityStats = db.prepare(`SELECT ROUND(AVG(rating) * 10) as avgScore, COUNT(*) as count FROM community_reviews WHERE game_id = ?`).get(row.id) as { avgScore: number; count: number };
-      updateGameScores.run(criticStats.avgScore ?? 0, communityStats.avgScore ?? 0, criticStats.count ?? 0, communityStats.count ?? 0, row.id);
+    for (const gameId of gameIds.values()) {
+      const criticStats = db.prepare(`SELECT ROUND(AVG(score)) as avgScore, COUNT(*) as count FROM critic_reviews WHERE game_id = ?`).get(gameId) as { avgScore: number; count: number };
+      const communityStats = db.prepare(`SELECT ROUND(AVG(rating) * 10) as avgScore, COUNT(*) as count FROM community_reviews WHERE game_id = ?`).get(gameId) as { avgScore: number; count: number };
+      updateGameScores.run(criticStats.avgScore ?? 0, communityStats.avgScore ?? 0, criticStats.count ?? 0, communityStats.count ?? 0, gameId);
     }
 
     for (const [title, awardName, year, result] of awardSeeds) {
@@ -306,16 +468,23 @@ export function seedDatabase(db: Database.Database) {
       JOIN games g ON g.id = cr.game_id
       JOIN critics c ON c.id = cr.critic_id
       ORDER BY cr.published_at DESC
-      LIMIT 12
-    `).all() as Array<{ game_id: number; critic_id: number; score: number; published_at: string; game_title: string; critic_name: string }>;
+      LIMIT 16
+    `).all() as Array<{
+      game_id: number;
+      critic_id: number;
+      score: number;
+      published_at: string;
+      game_title: string;
+      critic_name: string;
+    }>;
 
     freshestReviews.forEach((review, index) => {
-      const itemType = index % 3 === 0 ? "video" : "review";
-      const badge = review.score >= 85 ? "Fresh pulse" : "Mixed buzz";
+      const itemType = index % 4 === 0 ? "video" : "review";
+      const badge = review.score >= 88 ? "Fresh pulse" : review.score >= 76 ? "Critic radar" : "Mixed buzz";
       insertFeed.run(
         itemType,
         `${review.critic_name} on ${review.game_title}`,
-        `${review.critic_name} posted a ${itemType === "video" ? "new breakdown" : "fresh take"} with a ${review.score}/100 critic score.`,
+        `${review.critic_name} posted a ${itemType === "video" ? "new breakdown" : "fresh take"} with a ${review.score}/100 score for ${review.game_title}.`,
         review.game_id,
         review.critic_id,
         review.published_at,
@@ -323,40 +492,93 @@ export function seedDatabase(db: Database.Database) {
       );
     });
 
-    const newsTitles = [
-      ["Rising buzz: SETI keeps climbing", "Critics keep rewarding its deep strategy arc and solo puzzle structure.", "news", "Rising"],
-      ["Deal watch: Heat drops under $55", "Retailers are discounting the season's most replayed racing hit.", "deals", "Deal"],
-      ["Award radar: Sky Team lands another win", "The two-player co-op darling keeps sweeping award lists.", "news", "Award season"],
-      ["Weekend watchlist: Harmonies is surging", "Community sentiment is jumping as more tables discover the puzzle depth.", "news", "Trending"],
-      ["Video roundup: party-table favorites", "Theo Sparks and Benji Cruz both highlighted fast fillers for bigger groups.", "video", "Creator clip"],
-      ["Deal watch: Brass restock lands", "Cardboard Corner finally has fresh copies after weeks of low inventory.", "deals", "Restock"],
+    const editorialFeed = [
+      ["Hidden gem watch: Sea Salt & Paper keeps climbing", "Community sentiment continues to outrun critic coverage as more tables discover the tiny card game's replay value.", "news", "Hidden gem", "sea-salt-paper"],
+      ["Award radar: Sky Team adds another trophy", "The two-player co-op remains one of the most decorated modern releases in the database.", "news", "Award season", "sky-team"],
+      ["Deal watch: Brass drops below premium euro pricing", "Retailers are cutting into the usual heavy-game markup after a fresh restock wave.", "deals", "Deal", "brass-birmingham"],
+      ["Divisive corner: Hegemony sparks another debate", "Critics still admire the ambition, while community scores split over length and teach overhead.", "news", "Divisive", "hegemony"],
+      ["Release tracker: Dune expansion dominates anticipation", "Upcoming release interest is clustering around high-interaction strategy expansions.", "news", "Trending", "dune-imperium"],
+      ["Party table pulse: Ready Set Bet still plays loud", "Short-form critics keep resurfacing race-night favorites for summer gatherings.", "video", "Creator clip", "ready-set-bet"],
+      ["New release momentum: SETI refuses to cool off", "Heavy-strategy critics and curious euro fans are still driving the highest rising score in the catalog.", "news", "Rising", "seti-search-for-extraterrestrial-intelligence"],
+      ["Family shelf update: Harmonies leads the cozy stack", "Watchlists are filling with puzzle-forward games that still feel approachable for mixed groups.", "news", "Watchlist", "harmonies"],
     ] as const;
 
-    const featuredGameSlugs = ["seti-search-for-extraterrestrial-intelligence", "heat-pedal-to-the-metal", "sky-team", "harmonies", "scout", "brass-birmingham"];
-
-    newsTitles.forEach(([title, summary, type, badge], index) => {
-      const slug = featuredGameSlugs[index];
-      const gameId = slug ? gameIds.get(slug) : undefined;
-      insertFeed.run(type, title, summary, gameId ?? null, null, daysAgo(index + 1), badge);
+    editorialFeed.forEach(([title, summary, type, badge, slug], index) => {
+      insertFeed.run(type, title, summary, gameIds.get(slug) ?? null, null, daysAgo(index + 1), badge);
     });
 
-    const alexId = userIds.get("alex");
-    if (alexId) {
-      ["seti-search-for-extraterrestrial-intelligence", "harmonies", "wonderlands-war"].forEach((slug, index) => {
-        const gameId = gameIds.get(slug);
-        if (gameId) insertList.run(alexId, gameId, "watchlist", daysAgo(index + 2));
+    const rankedGamesForUser = (user: CommunityUserSeed) =>
+      gameSeeds
+        .map((game) => ({
+          game,
+          slug: slugify(game.title),
+          score:
+            affinity(game, user.tasteProfile)
+            + game.rising * 0.18
+            + game.buzz * 0.08
+            - Math.abs(game.complexity - user.preferredComplexity) * 4,
+        }))
+        .sort((left, right) => right.score - left.score || left.slug.localeCompare(right.slug));
+
+    for (const [userIndex, user] of communityUsers.entries()) {
+      const userId = userIds.get(user.handle);
+      if (!userId) continue;
+
+      const ratedGames = reviewsByUser.get(userId) ?? new Set<number>();
+      const rankedGames = rankedGamesForUser(user).filter((entry) => {
+        const gameId = gameIds.get(entry.slug);
+        return gameId ? !ratedGames.has(gameId) : false;
       });
-      ["sky-team", "the-white-castle", "apiary"].forEach((slug, index) => {
+
+      const watchCount = user.isCurrent ? 3 : 1 + (userIndex % 2);
+      const wishCount = user.isCurrent ? 3 : 1 + (userIndex % 3 === 0 ? 1 : 0);
+      const watchlist = user.isCurrent
+        ? ["seti-search-for-extraterrestrial-intelligence", "harmonies", "sea-salt-paper"]
+        : rankedGames.slice(0, watchCount).map((entry) => entry.slug);
+      const wishlist = user.isCurrent
+        ? ["sky-team", "the-white-castle", "apiary"]
+        : rankedGames.slice(watchCount, watchCount + wishCount).map((entry) => entry.slug);
+
+      watchlist.forEach((slug, index) => {
         const gameId = gameIds.get(slug);
-        if (gameId) insertList.run(alexId, gameId, "wishlist", daysAgo(index + 4));
+        if (gameId) insertList.run(userId, gameId, "watchlist", daysAgo((userIndex + 1) * 2 + index));
       });
-      ["greta-ledger", "samira-holt", "mina-vale"].forEach((slug, index) => {
-        const criticId = criticIds.get(slug);
-        if (criticId) insertFollow.run(alexId, criticId, daysAgo(index + 1));
+
+      wishlist.forEach((slug, index) => {
+        const gameId = gameIds.get(slug);
+        if (gameId) insertList.run(userId, gameId, "wishlist", daysAgo((userIndex + 1) * 2 + index + 3));
+      });
+
+      const matchedCritics = critics
+        .map((critic) => ({
+          slug: critic.slug,
+          alignment:
+            tasteAlignment(user.tasteProfile, critic.tasteProfile)
+            - Math.abs(user.preferredComplexity - critic.preferredComplexity) * 6,
+        }))
+        .sort((left, right) => right.alignment - left.alignment || left.slug.localeCompare(right.slug));
+
+      const followSlugs = user.isCurrent
+        ? ["greta-ledger", "samira-holt", "mina-vale", "viv-chen"]
+        : matchedCritics.slice(0, 1 + (userIndex % 3)).map((entry) => entry.slug);
+
+      followSlugs.forEach((criticSlug, index) => {
+        const criticId = criticIds.get(criticSlug);
+        if (criticId) insertFollow.run(userId, criticId, daysAgo(userIndex + index + 1));
       });
     }
 
     setMeta.run("seed_version", SEED_VERSION);
+    setMeta.run(
+      "seed_summary",
+      JSON.stringify({
+        games: gameSeeds.length,
+        critics: critics.length,
+        communityUsers: communityUsers.length,
+        criticReviews: (db.prepare(`SELECT COUNT(*) as count FROM critic_reviews`).get() as { count: number }).count,
+        communityReviews: (db.prepare(`SELECT COUNT(*) as count FROM community_reviews`).get() as { count: number }).count,
+      }),
+    );
   });
 
   transaction();

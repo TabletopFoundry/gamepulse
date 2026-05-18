@@ -7,6 +7,7 @@ import { seedDatabase, SEED_VERSION } from "./seed";
 
 const DB_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DB_DIR, "gamepulse.db");
+const PRODUCTION_RESEED_FLAG = "GAMEPULSE_ENABLE_PRODUCTION_RESEED";
 
 declare global {
   var __gamePulseDb: Database.Database | undefined;
@@ -31,6 +32,13 @@ function initializeDb(db: Database.Database) {
   }
 
   if (meta.value !== SEED_VERSION) {
+    if (process.env.NODE_ENV === "production" && hasReferenceData && process.env[PRODUCTION_RESEED_FLAG] !== "1") {
+      console.warn(
+        `GamePulse seed version mismatch (${meta.value} -> ${SEED_VERSION}). Skipping automatic reseed in production. Set ${PRODUCTION_RESEED_FLAG}=1 to allow it.`,
+      );
+      return;
+    }
+
     seedDatabase(db);
   }
 }

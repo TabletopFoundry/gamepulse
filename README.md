@@ -40,7 +40,7 @@ npm run dev
 open http://localhost:3000
 ```
 
-The database seeds automatically on first run with 40+ games, 8 mock critics, community ratings, reviews, awards, and feed items. No configuration needed.
+The database seeds automatically on first run with 60+ board games, 14 named critic profiles, 50+ community users, 200+ critic reviews, rich watchlists/wishlists, awards, and release-calendar data. No extra setup is required in local development.
 
 ## 📦 Scripts
 
@@ -143,8 +143,11 @@ GamePulse uses a multi-signal scoring system:
 ## 💾 Data Notes
 
 - The database lives at `data/gamepulse.db` and is auto-created on first run
-- Seed data regenerates when the internal `SEED_VERSION` changes
-- All user interactions (ratings, reviews, watchlist, follows, newsletter) persist locally
+- The seed catalog currently includes 60+ games, 14 critics, 50+ users, 200+ critic reviews, 100+ community reviews, awards, release-calendar entries, follow relationships, and saved-list activity
+- Seeds are deterministic and transactional: the seeding pass clears and rebuilds reference data in a single SQLite transaction, resets autoincrement sequences, and stamps `app_meta.seed_version`
+- Edge cases are intentionally included, including one-review games, hidden gems, and divisive titles with strong critic / weak community splits
+- In production, automatic reseeds are blocked when reference data already exists unless `GAMEPULSE_ENABLE_PRODUCTION_RESEED=1` is set
+- To force a fresh local dataset, run `npm run clean` and then start the app or run `npm run build`
 - The current user is a hardcoded mock user ("alex") — see [CONTRIBUTING.md](./CONTRIBUTING.md) for auth notes
 
 ## 🐳 Docker
