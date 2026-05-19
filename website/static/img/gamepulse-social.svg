@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0b1120"/>
+      <stop offset="1" stop-color="#1f2937"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fb7185"/>
+      <stop offset="1" stop-color="#e11d48"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="160" cy="120" r="200" fill="#fb7185" opacity="0.18"/>
+  <circle cx="1080" cy="540" r="240" fill="#f472b6" opacity="0.14"/>
+  <g transform="translate(120 230)">
+    <rect width="96" height="96" rx="22" fill="url(#accent)"/>
+    <path d="M22 64 L40 38 L52 50 L70 26 L86 70" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="70" cy="26" r="5" fill="white"/>
+  </g>
+  <text x="240" y="290" font-family="Inter, system-ui, sans-serif" font-size="68" font-weight="800" fill="white">GamePulse</text>
+  <text x="240" y="350" font-family="Inter, system-ui, sans-serif" font-size="30" font-weight="500" fill="#cbd5f5">Rotten Tomatoes for board games.</text>
+  <text x="240" y="390" font-family="Inter, system-ui, sans-serif" font-size="22" fill="#94a3b8">Critic consensus · Community scores · Taste matching</text>
+  <text x="120" y="580" font-family="JetBrains Mono, monospace" font-size="20" fill="#fb7185">$ npx degit TabletopFoundry/gamepulse</text>
+</svg>
